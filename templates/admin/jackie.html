@@ -18,6 +18,19 @@
     .jackie-orb.loading {
         animation: orbPulseFast 1s ease-in-out infinite;
     }
+    .jackie-orb.voice-listening {
+        box-shadow: 0 0 60px rgba(80, 200, 120, 0.45), 0 0 120px rgba(80, 200, 120, 0.25);
+        animation: orbPulse 2s ease-in-out infinite;
+    }
+    .jackie-orb.voice-speaking {
+        animation: orbPulseFast 0.7s ease-in-out infinite;
+        box-shadow: 0 0 80px rgba(200, 169, 96, 0.7), 0 0 160px rgba(200, 169, 96, 0.4);
+    }
+    .jackie-orb.voice-muted {
+        box-shadow: 0 0 40px rgba(220, 70, 70, 0.4), 0 0 80px rgba(220, 70, 70, 0.2);
+        animation: none;
+        opacity: 0.7;
+    }
     @keyframes orbPulse {
         0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(200, 169, 96, 0.4); }
         50%      { transform: scale(1.05); box-shadow: 0 0 80px rgba(200, 169, 96, 0.6); }
@@ -25,6 +38,14 @@
     @keyframes orbPulseFast {
         0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(200, 169, 96, 0.5); }
         50%      { transform: scale(1.08); box-shadow: 0 0 100px rgba(200, 169, 96, 0.8); }
+    }
+    .jackie-voice-error {
+        color: rgba(220, 70, 70, 0.9);
+        font-size: 0.75rem;
+        text-align: center;
+        max-width: 480px;
+        margin: 4px auto 0;
+        padding: 0 16px;
     }
 
     /* -- Orb section ---------------------------------------------------- */
@@ -206,14 +227,28 @@
 ">
     <!-- ORB SECTION (~30%) -->
     <div class="jackie-orb-section">
-        <div class="jackie-orb" :class="{ 'loading': loading }" @click="activate()"></div>
-        <span class="jackie-orb-label"
-              x-text="loading ? 'thinking...' : (messages.length === 0 ? 'click to activate' : 'type a message below')"></span>
+        <div class="jackie-orb"
+             :class="{
+                'loading': loading || voiceState === 'connecting',
+                'voice-listening': voiceState === 'listening' && !muted,
+                'voice-speaking':  voiceState === 'speaking' && !muted,
+                'voice-muted':     voiceActive && muted
+             }"
+             @click="orbClick()"></div>
+        <span class="jackie-orb-label" x-text="orbLabel()"></span>
         <div class="jackie-controls">
-            <button type="button" disabled style="opacity:0.4; cursor:default;">Mute</button>
-            <button type="button" disabled style="opacity:0.4; cursor:default;">End Session</button>
+            <button type="button"
+                    :disabled="!voiceActive"
+                    :style="!voiceActive ? 'opacity:0.4; cursor:default;' : ''"
+                    @click="toggleMute()"
+                    x-text="muted ? 'Unmute' : 'Mute'"></button>
+            <button type="button"
+                    :disabled="!voiceActive"
+                    :style="!voiceActive ? 'opacity:0.4; cursor:default;' : ''"
+                    @click="stopVoice()">End Session</button>
             <button type="button" @click="clearHistory()">Clear</button>
         </div>
+        <div class="jackie-voice-error" x-show="voiceError" x-text="voiceError"></div>
     </div>
 
     <!-- CONVERSATION label -->
@@ -290,11 +325,25 @@ function jackieChat() {
         loading: false,
         status: 'connected',
 
+        // -- Voice state -------------------------------------------------
+        voiceActive: false,
+        voiceState: 'idle',  // 'idle' | 'connecting' | 'listening' | 'speaking'
+        voiceError: '',
+        muted: false,
+        _pc: null,
+        _localStream: null,
+        _audioEl: null,
+        _dataChannel: null,
+        _idleTimer: null,
+        _idleMs: 120000,  // auto-disconnect after 2 min of silence
+
         init() {
             const saved = localStorage.getItem('jackie-chat-history');
             if (saved) {
                 try { this.messages = JSON.parse(saved); } catch(e) { this.messages = []; }
             }
+            // Clean up the voice session if the user navigates away.
+            window.addEventListener('beforeunload', () => this._cleanupVoice());
         },
 
         saveHistory() {
@@ -314,16 +363,155 @@ function jackieChat() {
             this.status = 'connected';
         },
 
-        activate() {
+        // -- Orb click: voice is the primary action ----------------------
+        orbClick() {
             if (this.loading) return;
-            if (this.messages.length === 0) {
-                this.input = 'Hey Jackie, what can you help me with?';
-                this.send();
+            if (this.voiceActive) {
+                this.toggleMute();
             } else {
-                this.$nextTick(() => {
-                    const inp = this.$el.querySelector('.jackie-input-bar input');
-                    if (inp) inp.focus();
+                this.startVoice();
+            }
+        },
+
+        activate() { this.orbClick(); },  // back-compat alias
+
+        orbLabel() {
+            if (this.loading) return 'thinking...';
+            switch (this.voiceState) {
+                case 'connecting': return 'connecting...';
+                case 'listening':  return this.muted ? 'muted — tap orb to unmute' : 'listening...';
+                case 'speaking':   return 'Jackie is speaking...';
+                default:
+                    return this.messages.length === 0
+                        ? 'tap the orb to talk to Jackie'
+                        : 'tap the orb to talk — or type below';
+            }
+        },
+
+        // -- Voice (OpenAI Realtime over WebRTC) -------------------------
+        async startVoice() {
+            if (this.voiceActive || this.voiceState === 'connecting') return;
+            this.voiceError = '';
+            this.voiceState = 'connecting';
+            try {
+                // 1. Mint an ephemeral key on our server.
+                const tokenResp = await fetch('/jackie/api/voice/token', { method: 'POST' });
+                const tokenData = await tokenResp.json();
+                if (!tokenResp.ok) {
+                    throw new Error(tokenData.error || ('Token request failed: HTTP ' + tokenResp.status));
+                }
+                const ephemeralKey = tokenData.value
+                    || (tokenData.client_secret && tokenData.client_secret.value);
+                const model = tokenData.model || 'gpt-realtime';
+                if (!ephemeralKey) throw new Error('No ephemeral key returned.');
+
+                // 2. Grab the microphone.
+                this._localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // 3. Set up a peer connection. Audio in, audio out, data channel for events.
+                this._pc = new RTCPeerConnection();
+                this._audioEl = document.createElement('audio');
+                this._audioEl.autoplay = true;
+                this._audioEl.style.display = 'none';
+                document.body.appendChild(this._audioEl);
+                this._pc.ontrack = (e) => { this._audioEl.srcObject = e.streams[0]; };
+
+                this._localStream.getTracks().forEach(t => this._pc.addTrack(t, this._localStream));
+
+                this._dataChannel = this._pc.createDataChannel('oai-events');
+                this._dataChannel.addEventListener('message', (e) => {
+                    try { this._handleVoiceEvent(JSON.parse(e.data)); } catch (err) { /* ignore */ }
                 });
+
+                // 4. SDP offer/answer with OpenAI.
+                const offer = await this._pc.createOffer();
+                await this._pc.setLocalDescription(offer);
+
+                const sdpResp = await fetch('https://api.openai.com/v1/realtime?model=' + encodeURIComponent(model), {
+                    method: 'POST',
+                    body: offer.sdp,
+                    headers: {
+                        'Authorization': 'Bearer ' + ephemeralKey,
+                        'Content-Type': 'application/sdp',
+                    },
+                });
+                if (!sdpResp.ok) throw new Error('SDP exchange failed: ' + (await sdpResp.text()).slice(0, 200));
+                const answerSdp = await sdpResp.text();
+                await this._pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+                this.voiceActive = true;
+                this.voiceState = 'listening';
+                this._startIdleTimer();
+            } catch (err) {
+                this.voiceError = (err && err.message) ? err.message : String(err);
+                this.voiceState = 'idle';
+                this.voiceActive = false;
+                this._cleanupVoice();
+            }
+        },
+
+        stopVoice() {
+            this._cleanupVoice();
+            this.voiceActive = false;
+            this.voiceState = 'idle';
+            this.muted = false;
+        },
+
+        toggleMute() {
+            if (!this._localStream) return;
+            this.muted = !this.muted;
+            this._localStream.getAudioTracks().forEach(t => { t.enabled = !this.muted; });
+        },
+
+        _cleanupVoice() {
+            if (this._idleTimer) { clearTimeout(this._idleTimer); this._idleTimer = null; }
+            if (this._dataChannel) { try { this._dataChannel.close(); } catch(e){} this._dataChannel = null; }
+            if (this._pc) { try { this._pc.close(); } catch(e){} this._pc = null; }
+            if (this._localStream) {
+                this._localStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
+                this._localStream = null;
+            }
+            if (this._audioEl) {
+                this._audioEl.srcObject = null;
+                try { this._audioEl.remove(); } catch(e){}
+                this._audioEl = null;
+            }
+        },
+
+        _startIdleTimer() {
+            if (this._idleTimer) clearTimeout(this._idleTimer);
+            this._idleTimer = setTimeout(() => {
+                this.voiceError = 'Voice session ended after 2 min of inactivity (to save credits).';
+                this.stopVoice();
+            }, this._idleMs);
+        },
+
+        _handleVoiceEvent(event) {
+            const t = (event && event.type) || '';
+            if (t === 'input_audio_buffer.speech_started') {
+                this.voiceState = 'listening';
+                this._startIdleTimer();
+            } else if (t === 'response.audio.delta' || t === 'response.audio_transcript.delta') {
+                this.voiceState = 'speaking';
+                this._startIdleTimer();
+            } else if (t === 'response.done' || t === 'response.audio.done') {
+                this.voiceState = 'listening';
+            } else if (t === 'conversation.item.input_audio_transcription.completed') {
+                const text = (event.transcript || '').trim();
+                if (text) {
+                    this.messages.push({ role: 'user', content: text, timestamp: new Date().toISOString() });
+                    this.saveHistory();
+                    this.scrollBottom();
+                }
+            } else if (t === 'response.audio_transcript.done') {
+                const text = (event.transcript || '').trim();
+                if (text) {
+                    this.messages.push({ role: 'assistant', content: text, timestamp: new Date().toISOString() });
+                    this.saveHistory();
+                    this.scrollBottom();
+                }
+            } else if (t === 'error') {
+                this.voiceError = (event.error && event.error.message) ? event.error.message : 'Realtime error';
             }
         },
 
