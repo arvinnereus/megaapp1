@@ -1,0 +1,659 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Bookings{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Manage your calendar and appointment slots.</p>{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+<style>
+    /* FullCalendar dark theme overrides */
+    .fc {
+        --fc-border-color: var(--border);
+        --fc-button-bg-color: var(--bg-card);
+        --fc-button-border-color: var(--border);
+        --fc-button-text-color: var(--text-primary);
+        --fc-button-hover-bg-color: var(--bg-card-hover);
+        --fc-button-hover-border-color: var(--border-gold);
+        --fc-button-active-bg-color: var(--gold);
+        --fc-button-active-border-color: var(--gold);
+        --fc-today-bg-color: rgba(199, 163, 90, 0.06);
+        --fc-neutral-bg-color: var(--bg-secondary);
+        --fc-page-bg-color: transparent;
+        --fc-event-border-color: transparent;
+        --fc-now-indicator-color: var(--gold);
+    }
+    .fc .fc-col-header-cell-cushion,
+    .fc .fc-daygrid-day-number {
+        color: var(--text-muted);
+        text-decoration: none;
+    }
+    .fc .fc-toolbar-title {
+        color: var(--text-primary);
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .fc .fc-button {
+        border-radius: var(--radius-sm);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        padding: 6px 14px;
+    }
+    .fc .fc-button:focus {
+        box-shadow: 0 0 0 2px var(--gold-glow);
+    }
+    .fc .fc-event {
+        border-radius: var(--radius-sm);
+        padding: 2px 6px;
+        font-size: 0.8rem;
+        cursor: grab;
+    }
+    .fc .fc-event:active {
+        cursor: grabbing;
+    }
+    .fc .fc-daygrid-day.fc-day-today {
+        background: rgba(199, 163, 90, 0.06);
+    }
+    .fc .fc-scrollgrid {
+        border-color: var(--border);
+    }
+    .fc th {
+        border-color: var(--border);
+    }
+    .fc td {
+        border-color: var(--border-light);
+    }
+
+    /* Booking detail popup */
+    .booking-popup-overlay {
+        position: fixed;
+        inset: 0;
+        background: var(--bg-overlay);
+        z-index: var(--z-modal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .booking-popup {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: var(--shadow-lg);
+    }
+    .booking-popup h3 {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+    }
+    .booking-popup .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 0.875rem;
+    }
+    .booking-popup .detail-row:last-child {
+        border-bottom: none;
+    }
+    .booking-popup .detail-label {
+        color: var(--text-subtle);
+    }
+    .booking-popup .detail-value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    /* Right sidebar panels */
+    .sidebar-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+    }
+    .sidebar-panel + .sidebar-panel {
+        margin-top: 16px;
+    }
+    .sidebar-panel h3 {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Upcoming appointment card */
+    .upcoming-card {
+        padding: 10px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        margin-bottom: 8px;
+        font-size: 0.8125rem;
+        transition: border-color var(--transition-fast);
+    }
+    .upcoming-card:hover {
+        border-color: var(--border-gold, var(--border));
+    }
+    .upcoming-card .upcoming-client {
+        color: var(--text-primary);
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    .upcoming-card .upcoming-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-subtle);
+        font-size: 0.75rem;
+    }
+    .upcoming-card .upcoming-type {
+        color: var(--gold);
+        font-weight: 500;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    /* Slot entry form */
+    .slot-form-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 14px;
+    }
+    .slot-form-card .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .slot-form-card .form-group {
+        margin-bottom: 0;
+    }
+    .slot-form-card label {
+        display: block;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+    }
+    .slot-form-card select {
+        width: 100%;
+        font-size: 0.8125rem;
+        padding: 7px 10px;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        padding-right: 28px;
+        cursor: pointer;
+    }
+    .slot-form-card select:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 0 2px var(--gold-glow);
+    }
+
+    /* Existing slots list */
+    .slot-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        margin-bottom: 8px;
+        font-size: 0.8125rem;
+    }
+    .slot-item .slot-info {
+        color: var(--text-primary);
+    }
+    .slot-item .slot-day {
+        color: var(--gold);
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+    .slot-delete-btn {
+        background: none;
+        border: none;
+        color: var(--text-subtle);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: var(--radius-sm);
+        transition: color var(--transition-fast), background var(--transition-fast);
+    }
+    .slot-delete-btn:hover {
+        color: var(--danger);
+        background: var(--danger-bg);
+    }
+
+    /* Layout */
+    .bookings-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 24px;
+        align-items: start;
+    }
+    @media (max-width: 1024px) {
+        .bookings-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="bookingsPage()" x-init="initCalendar()">
+
+    <div class="bookings-layout">
+        <!-- Calendar Card -->
+        <div class="card" style="padding: 20px;">
+            <div id="booking-calendar" style="min-height: 500px;"></div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div>
+            <!-- Upcoming Appointments Panel -->
+            <div class="sidebar-panel">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Upcoming Appointments
+                </h3>
+
+                <div style="max-height: 280px; overflow-y: auto;">
+                    <template x-if="upcomingAppointments.length === 0">
+                        <p style="color: var(--text-subtle); font-size: 0.8125rem; text-align: center; padding: 20px 0;">No upcoming appointments.</p>
+                    </template>
+                    <template x-for="appt in upcomingAppointments" :key="appt.id">
+                        <div class="upcoming-card">
+                            <div class="upcoming-client" x-text="appt.title"></div>
+                            <div class="upcoming-meta">
+                                <span x-text="formatApptDate(appt.start)"></span>
+                                <span>&middot;</span>
+                                <span x-text="formatApptTime(appt.start)"></span>
+                            </div>
+                            <div class="upcoming-type" x-text="appt.extendedProps?.slot_type || appt.extendedProps?.booking_type || 'Appointment'"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Add Slot Panel -->
+            <div class="sidebar-panel">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Add Availability Slot
+                </h3>
+
+                <div class="slot-form-card">
+                    <form @submit.prevent="addSlot()">
+                        <!-- Day of Week -->
+                        <div style="margin-bottom: 10px;">
+                            <label>Day of Week</label>
+                            <select x-model="newSlot.day_of_week">
+                                <option value="0">Monday</option>
+                                <option value="1">Tuesday</option>
+                                <option value="2">Wednesday</option>
+                                <option value="3">Thursday</option>
+                                <option value="4">Friday</option>
+                                <option value="5">Saturday</option>
+                                <option value="6">Sunday</option>
+                            </select>
+                        </div>
+
+                        <!-- Time Range -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start Time</label>
+                                <select x-model="newSlot.start_time">
+                                    <template x-for="t in timeOptions" :key="'s'+t.value">
+                                        <option :value="t.value" x-text="t.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>End Time</label>
+                                <select x-model="newSlot.end_time">
+                                    <template x-for="t in timeOptions" :key="'e'+t.value">
+                                        <option :value="t.value" x-text="t.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Type -->
+                        <div style="margin-bottom: 12px;">
+                            <label>Type</label>
+                            <select x-model="newSlot.slot_type">
+                                <option value="consultation">Consultation</option>
+                                <option value="discovery">Discovery Call</option>
+                                <option value="demo">Demo</option>
+                                <option value="follow-up">Follow-up</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 0.8125rem; padding: 8px 16px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -2px; margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Slot
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Slots -->
+                <template x-if="slots.length > 0">
+                    <div style="margin-top: 14px;">
+                        <h4 style="color: var(--text-muted); font-size: 0.6875rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Current Slots</h4>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            <template x-for="slot in slots" :key="slot.id">
+                                <div class="slot-item">
+                                    <div>
+                                        <div class="slot-day" x-text="dayNames[slot.day_of_week]"></div>
+                                        <div class="slot-info">
+                                            <span x-text="formatSlotTime(slot.start_time)"></span> - <span x-text="formatSlotTime(slot.end_time)"></span>
+                                            <span style="color: var(--text-subtle); margin-left: 4px;" x-text="'(' + slot.slot_type + ')'"></span>
+                                        </div>
+                                    </div>
+                                    <button class="slot-delete-btn" @click="deleteSlot(slot.id)" title="Remove slot">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Detail Popup -->
+    <div class="booking-popup-overlay"
+         x-show="selectedEvent"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click.self="selectedEvent = null"
+         @keydown.escape.window="selectedEvent = null">
+        <div class="booking-popup" @click.stop>
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <h3 x-text="selectedEvent?.title" style="margin-bottom: 0;"></h3>
+                <button @click="selectedEvent = null" style="background: none; border: none; color: var(--text-subtle); cursor: pointer; padding: 4px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <div>
+                <div class="detail-row">
+                    <span class="detail-label">Email</span>
+                    <span class="detail-value" x-text="selectedEvent?.extendedProps?.email || '--'"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phone</span>
+                    <span class="detail-value" x-text="selectedEvent?.extendedProps?.phone || '--'"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value">
+                        <span style="padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 500;"
+                              :style="selectedEvent?.extendedProps?.status === 'confirmed' ? 'background: var(--gold-tint); color: var(--gold);' :
+                                      selectedEvent?.extendedProps?.status === 'completed' ? 'background: var(--success-bg); color: var(--success);' :
+                                      'background: var(--danger-bg); color: var(--danger);'"
+                              x-text="selectedEvent?.extendedProps?.status"></span>
+                    </span>
+                </div>
+                <div class="detail-row" x-show="selectedEvent?.extendedProps?.notes">
+                    <span class="detail-label">Notes</span>
+                    <span class="detail-value" style="max-width: 60%; text-align: right;" x-text="selectedEvent?.extendedProps?.notes"></span>
+                </div>
+            </div>
+
+            <!-- Status Actions -->
+            <div style="display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+                <button class="btn btn-outline" style="flex: 1; font-size: 0.8125rem; padding: 8px;"
+                        :style="selectedEvent?.extendedProps?.status === 'confirmed' ? 'border-color: var(--gold); color: var(--gold); opacity: 0.5;' : ''"
+                        :disabled="selectedEvent?.extendedProps?.status === 'confirmed'"
+                        @click="updateStatus('confirmed')">
+                    Confirm
+                </button>
+                <button class="btn" style="flex: 1; font-size: 0.8125rem; padding: 8px; background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.3);"
+                        :style="selectedEvent?.extendedProps?.status === 'completed' ? 'opacity: 0.5;' : ''"
+                        :disabled="selectedEvent?.extendedProps?.status === 'completed'"
+                        @click="updateStatus('completed')">
+                    Complete
+                </button>
+                <button class="btn" style="flex: 1; font-size: 0.8125rem; padding: 8px; background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.3);"
+                        :style="selectedEvent?.extendedProps?.status === 'cancelled' ? 'opacity: 0.5;' : ''"
+                        :disabled="selectedEvent?.extendedProps?.status === 'cancelled'"
+                        @click="updateStatus('cancelled')">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function bookingsPage() {
+    return {
+        calendar: null,
+        selectedEvent: null,
+        slots: [],
+        upcomingAppointments: [],
+        dayNames: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        newSlot: {
+            day_of_week: '0',
+            start_time: '09:00',
+            end_time: '10:00',
+            slot_type: 'consultation'
+        },
+
+        // Generate time options from 6:00 AM to 9:00 PM in 30-min increments
+        get timeOptions() {
+            const opts = [];
+            for (let h = 6; h <= 21; h++) {
+                for (let m = 0; m < 60; m += 30) {
+                    if (h === 21 && m > 0) break;
+                    const val = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                    const hour12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const label = hour12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+                    opts.push({ value: val, label: label });
+                }
+            }
+            return opts;
+        },
+
+        initCalendar() {
+            this.loadSlots();
+            this.loadUpcoming();
+            const calendarEl = document.getElementById('booking-calendar');
+            this.calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                events: '/bookings/api/events',
+                eventClick: (info) => {
+                    this.selectedEvent = {
+                        id: info.event.id,
+                        title: info.event.title,
+                        extendedProps: info.event.extendedProps
+                    };
+                },
+                // Drag-and-drop support
+                editable: true,
+                eventDrop: (info) => {
+                    const evt = info.event;
+                    const newStart = evt.start.toISOString();
+                    const newEnd = evt.end ? evt.end.toISOString() : null;
+                    console.log('[Bookings] Event dropped:', {
+                        id: evt.id,
+                        title: evt.title,
+                        newStart: newStart,
+                        newEnd: newEnd
+                    });
+                    // Attempt to update via PATCH (logs change; backend may need date field support)
+                    fetch('/bookings/api/' + evt.id + '/status', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            status: evt.extendedProps?.status || 'confirmed',
+                            date: newStart,
+                            end_date: newEnd
+                        })
+                    }).then(resp => {
+                        if (resp.ok) {
+                            if (window.showToast) window.showToast('Appointment moved');
+                            this.loadUpcoming();
+                        } else {
+                            console.warn('[Bookings] PATCH responded with', resp.status, '- reverting');
+                            info.revert();
+                        }
+                    }).catch(err => {
+                        console.error('[Bookings] Failed to update after drop:', err);
+                        info.revert();
+                    });
+                },
+                height: 'auto',
+                nowIndicator: true,
+                dayMaxEvents: 3,
+            });
+            this.calendar.render();
+        },
+
+        async loadUpcoming() {
+            try {
+                const resp = await fetch('/bookings/api/events');
+                if (!resp.ok) return;
+                const events = await resp.json();
+                const now = new Date();
+                this.upcomingAppointments = events
+                    .filter(e => {
+                        const start = new Date(e.start);
+                        const status = e.extendedProps?.status || e.status || '';
+                        return start >= now && status !== 'cancelled';
+                    })
+                    .sort((a, b) => new Date(a.start) - new Date(b.start))
+                    .slice(0, 10);
+            } catch (e) {
+                console.error('Failed to load upcoming appointments:', e);
+            }
+        },
+
+        formatApptDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            const today = new Date();
+            const tomorrow = new Date();
+            tomorrow.setDate(today.getDate() + 1);
+
+            if (d.toDateString() === today.toDateString()) return 'Today';
+            if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+
+            return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        },
+
+        formatApptTime(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        },
+
+        formatSlotTime(timeStr) {
+            if (!timeStr) return timeStr;
+            const parts = timeStr.split(':');
+            let h = parseInt(parts[0]);
+            const m = parts[1] || '00';
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+            return h + ':' + m + ' ' + ampm;
+        },
+
+        async loadSlots() {
+            try {
+                const resp = await fetch('/bookings/api/slots');
+                if (resp.ok) this.slots = await resp.json();
+            } catch (e) {
+                console.error('Failed to load slots:', e);
+            }
+        },
+
+        async addSlot() {
+            try {
+                const resp = await fetch('/bookings/api/slots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        day_of_week: parseInt(this.newSlot.day_of_week),
+                        start_time: this.newSlot.start_time,
+                        end_time: this.newSlot.end_time,
+                        slot_type: this.newSlot.slot_type
+                    })
+                });
+                if (resp.ok) {
+                    this.loadSlots();
+                    this.newSlot = { day_of_week: '0', start_time: '09:00', end_time: '10:00', slot_type: 'consultation' };
+                    if (window.showToast) window.showToast('Slot added successfully');
+                }
+            } catch (e) {
+                console.error('Failed to add slot:', e);
+            }
+        },
+
+        async deleteSlot(slotId) {
+            if (!confirm('Remove this availability slot?')) return;
+            try {
+                const resp = await fetch('/bookings/api/slots/' + slotId, { method: 'DELETE' });
+                if (resp.ok) {
+                    this.slots = this.slots.filter(s => s.id !== slotId);
+                    if (window.showToast) window.showToast('Slot removed');
+                }
+            } catch (e) {
+                console.error('Failed to delete slot:', e);
+            }
+        },
+
+        async updateStatus(status) {
+            if (!this.selectedEvent) return;
+            try {
+                const resp = await fetch('/bookings/api/' + this.selectedEvent.id + '/status', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (resp.ok) {
+                    this.selectedEvent.extendedProps.status = status;
+                    this.calendar.refetchEvents();
+                    this.loadUpcoming();
+                    if (window.showToast) window.showToast('Status updated to ' + status);
+                }
+            } catch (e) {
+                console.error('Failed to update status:', e);
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

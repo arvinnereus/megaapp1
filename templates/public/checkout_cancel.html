@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_name }} - Checkout Cancelled{% endblock %}
+
+{% block body %}
+<div style="background: var(--bg-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div style="text-align: center; max-width: 500px; padding: 24px;">
+        <div style="width: 72px; height: 72px; background: rgba(239,68,68,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <h1 style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Checkout Cancelled</h1>
+        <p style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 32px;">
+            Your checkout was cancelled. No charges were made. Feel free to try again anytime.
+        </p>
+        <a href="/store" class="btn btn-primary" style="padding: 14px 32px;">Return to Store</a>
+    </div>
+</div>
+{% endblock %}

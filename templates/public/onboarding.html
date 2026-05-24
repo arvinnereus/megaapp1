@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Client Onboarding Survey{% endblock %}
+
+{% block body %}
+<div style="min-height: 100vh; background-color: var(--bg-primary); display: flex; align-items: center; justify-content: center; padding: 2rem 1rem;">
+    <div style="width: 100%; max-width: 640px;">
+
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <h1 style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.5rem;">Tell Us About Your Business</h1>
+            <p style="color: var(--text-secondary); font-size: 1rem; margin: 0;">Help us understand your needs so we can serve you better.</p>
+        </div>
+
+        <!-- Form Card -->
+        <form action="{{ url_for('onboarding.submit') }}" method="POST"
+              style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem;">
+
+            <!-- Contact Info Section -->
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.1rem; font-weight: 600; color: var(--gold); margin: 0 0 1.2rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">Contact Information</h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">Name <span style="color: #ef4444;">*</span></label>
+                        <input type="text" name="name" required
+                               style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; box-sizing: border-box;"
+                               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+                               placeholder="Your full name">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">Email <span style="color: #ef4444;">*</span></label>
+                        <input type="email" name="email" required
+                               style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; box-sizing: border-box;"
+                               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+                               placeholder="you@example.com">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">Phone</label>
+                        <input type="tel" name="phone"
+                               style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; box-sizing: border-box;"
+                               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+                               placeholder="(555) 123-4567">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">Company / Business Name</label>
+                        <input type="text" name="company"
+                               style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; box-sizing: border-box;"
+                               onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+                               placeholder="Your business name">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Questions Section -->
+            {% if questions %}
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.1rem; font-weight: 600; color: var(--gold); margin: 0 0 1.2rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">About Your Business</h2>
+
+                {% for q in questions %}
+                <div style="margin-bottom: 1.2rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">{{ q.question_text }}</label>
+
+                    {% if q.question_type == "textarea" %}
+                    <textarea name="q_{{ q.id }}" rows="3"
+                              style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; resize: vertical; font-family: inherit; box-sizing: border-box;"
+                              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+
+                    {% elif q.question_type == "select" %}
+                    <select name="q_{{ q.id }}"
+                            style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+                        <option value="" style="color: var(--text-tertiary);">Select an option...</option>
+                        {% for opt in q.options.split(",") %}
+                        <option value="{{ opt.strip() }}">{{ opt.strip() }}</option>
+                        {% endfor %}
+                    </select>
+
+                    {% else %}
+                    <input type="text" name="q_{{ q.id }}"
+                           style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; outline: none; box-sizing: border-box;"
+                           onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Submit -->
+            <button type="submit"
+                    style="width: 100%; padding: 0.8rem; background: var(--gold); color: #0B0B0D; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;"
+                    onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                Submit Survey
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-tertiary);">
+            Your information is kept private and secure.
+        </p>
+    </div>
+</div>
+{% endblock %}

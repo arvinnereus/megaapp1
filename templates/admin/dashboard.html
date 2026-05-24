@@ -1,0 +1,400 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Welcome back. Here's your business at a glance.</p>{% endblock %}
+
+{% block content %}
+<div x-data="dashboardData()">
+
+{% if not setup_done %}
+<!-- Setup Banner -->
+<div style="background: rgba(199,163,90,0.08); border: 1px solid rgba(199,163,90,0.25); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px;" x-data="{ dismissed: localStorage.getItem('setup-banner-dismissed') }" x-show="!dismissed">
+    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(199,163,90,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    </div>
+    <div style="flex: 1;">
+        <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">Welcome! Let's get you set up.</div>
+        <div style="font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.5;">Follow the step-by-step guide in <strong>Manual & Help</strong> to configure your API keys, add contacts, and go live.</div>
+    </div>
+    <a href="/help" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--gold); color: #0B0B0D; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; white-space: nowrap;">
+        Open Guide
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+    <button @click="dismissed = true; localStorage.setItem('setup-banner-dismissed', '1')" style="background: none; border: none; cursor: pointer; color: var(--text-subtle); padding: 4px;" title="Dismiss">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+</div>
+{% endif %}
+
+<!-- KPI Stats Row -->
+<div class="grid-4" style="margin-bottom: 20px;">
+    <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--gold-tint); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">{{ stats.total_contacts }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Total Contacts</div>
+        </div>
+    </div>
+
+    <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(34, 197, 94, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">{{ stats.total_leads }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Active Leads</div>
+        </div>
+    </div>
+
+    <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${{ "{:,.0f}".format(stats.pipeline_value) }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Pipeline Value</div>
+        </div>
+    </div>
+
+    <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--gold-tint); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${{ "{:,.0f}".format(stats.total_revenue) }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Revenue (Won)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Chart -->
+<div class="card" style="margin-bottom: 20px; padding: 0; overflow: hidden;">
+    <div style="padding: 20px 24px 0 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin: 0;">Revenue</h3>
+            <p style="color: var(--text-subtle); font-size: 0.75rem; margin: 4px 0 0 0;">Rolling 90-day performance</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; font-size: 0.75rem;">
+            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-subtle);">
+                <span style="width: 12px; height: 3px; background: var(--gold); border-radius: 2px; display: inline-block;"></span>
+                Current
+            </span>
+            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-subtle);">
+                <span style="width: 12px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; display: inline-block; border-top: 2px dashed rgba(255,255,255,0.3);"></span>
+                Previous
+            </span>
+        </div>
+    </div>
+    <div style="padding: 12px 16px 16px 16px;">
+        <canvas id="revenueChart" style="width: 100%; height: 260px;"></canvas>
+    </div>
+</div>
+
+<!-- Two-Column: Transactions + Content Engine -->
+<div class="grid-2" style="margin-bottom: 20px; align-items: start;">
+
+    <!-- LEFT: Recent Transactions -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);">
+            <h3 style="color: var(--text-primary); font-weight: 600; font-size: 0.875rem; margin: 0;">Recent Transactions</h3>
+        </div>
+        <div style="max-height: 380px; overflow-y: auto;">
+            <template x-for="(txn, i) in transactions" :key="i">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; flex-shrink: 0;"
+                             :style="'background: ' + txn.avatarBg + '; color: ' + txn.avatarColor">
+                            <span x-text="txn.initials"></span>
+                        </div>
+                        <div style="min-width: 0;">
+                            <div style="font-size: 0.8125rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="txn.name"></div>
+                            <div style="font-size: 0.7rem; color: var(--text-subtle);" x-text="txn.date"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                        <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);" x-text="'$' + txn.amount"></span>
+                        <span style="font-size: 0.675rem; font-weight: 500; padding: 2px 8px; border-radius: 10px; white-space: nowrap;"
+                              :style="txn.status === 'Paid' ? 'background: rgba(34,197,94,0.12); color: #22c55e;' :
+                                      txn.status === 'Refunded' ? 'background: rgba(245,158,11,0.12); color: #f59e0b;' :
+                                      'background: rgba(239,68,68,0.12); color: #ef4444;'"
+                              x-text="txn.status"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- RIGHT: Content Engine -->
+    <div>
+        <div style="margin-bottom: 12px;">
+            <h3 style="color: var(--text-primary); font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Content Engine</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">{{ content_total|default(0) }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Total Content Items</div>
+                </div>
+            </div>
+
+            <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">{{ content_ready|default(0) }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Ready to Post</div>
+                </div>
+            </div>
+
+            <div class="stat-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(34, 197, 94, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1.2;">{{ content_published|default(0) }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-subtle); letter-spacing: 0.03em;">Published</div>
+                </div>
+            </div>
+
+            <!-- Deals summary mini-cards -->
+            <div style="display: flex; gap: 12px; margin-top: 4px;">
+                <div class="stat-card" style="flex: 1; padding: 14px 16px; text-align: center;">
+                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">{{ stats.total_deals }}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-subtle);">Total Deals</div>
+                </div>
+                <div class="stat-card" style="flex: 1; padding: 14px 16px; text-align: center;">
+                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--success);">{{ stats.won_deals }}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-subtle);">Deals Won</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if funnel %}
+<!-- Conversion Funnel -->
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Conversion Funnel
+        </h3>
+        <span style="color: var(--text-subtle); font-size: 0.75rem;">Last 30 days</span>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: 24px; align-items: flex-end;">
+            <div style="flex: 1; text-align: center;">
+                <div style="background: var(--gold-tint); border-radius: var(--radius-md); padding: 20px 12px; margin-bottom: 8px;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--gold);">{{ funnel.page_views }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px;">Page Views</div>
+                </div>
+            </div>
+            <div style="padding-bottom: 40px; color: var(--text-subtle);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <div style="font-size: 0.65rem; text-align: center;">{{ funnel.signup_rate }}%</div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <div style="background: rgba(34, 197, 94, 0.08); border-radius: var(--radius-md); padding: 20px 12px; margin-bottom: 8px;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ funnel.signups }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px;">Signups</div>
+                </div>
+            </div>
+            <div style="padding-bottom: 40px; color: var(--text-subtle);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <div style="font-size: 0.65rem; text-align: center;">{{ funnel.purchase_rate }}%</div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <div style="background: rgba(245, 158, 11, 0.08); border-radius: var(--radius-md); padding: 20px 12px; margin-bottom: 8px;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ funnel.purchases }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-subtle); margin-top: 4px;">Purchases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Recent Activity
+        </h3>
+    </div>
+    <div class="card-body">
+        {% if recent_activity %}
+        <div class="timeline">
+            {% for activity in recent_activity %}
+            <div class="timeline-item">
+                <div class="timeline-dot
+                    {% if 'created' in activity.action_type %}success
+                    {% elif 'moved' in activity.action_type %}warning
+                    {% elif 'deleted' in activity.action_type %}danger
+                    {% endif %}
+                "></div>
+                <div class="timeline-content">
+                    <p style="color: var(--text-primary); font-size: 0.875rem; margin-bottom: 4px;">{{ activity.description }}</p>
+                    <span class="timeline-time">{{ activity.created_at.strftime('%b %d, %Y at %I:%M %p') if activity.created_at else '' }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <h3 class="empty-state-heading">No activity yet</h3>
+            <p class="empty-state-description">Start by adding your first contact to get things rolling.</p>
+            <a href="/admin/contacts" class="btn btn-primary" style="margin-top: 12px;">Add Contact</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</div><!-- /x-data -->
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function dashboardData() {
+    return {
+        transactions: [
+            { name: 'Sarah Mitchell', initials: 'SM', amount: '2,450.00', status: 'Paid', date: 'May 7, 2026', avatarBg: 'rgba(199,163,90,0.15)', avatarColor: 'var(--gold)' },
+            { name: 'James Rodriguez', initials: 'JR', amount: '1,890.00', status: 'Paid', date: 'May 6, 2026', avatarBg: 'rgba(34,197,94,0.12)', avatarColor: '#22c55e' },
+            { name: 'Emily Chen', initials: 'EC', amount: '475.00', status: 'Refunded', date: 'May 5, 2026', avatarBg: 'rgba(245,158,11,0.12)', avatarColor: '#f59e0b' },
+            { name: 'Marcus Johnson', initials: 'MJ', amount: '3,200.00', status: 'Paid', date: 'May 4, 2026', avatarBg: 'rgba(99,102,241,0.12)', avatarColor: '#6366f1' },
+            { name: 'Lisa Park', initials: 'LP', amount: '950.00', status: 'Paid', date: 'May 3, 2026', avatarBg: 'rgba(199,163,90,0.15)', avatarColor: 'var(--gold)' },
+            { name: 'David Kim', initials: 'DK', amount: '1,100.00', status: 'Failed', date: 'May 2, 2026', avatarBg: 'rgba(239,68,68,0.12)', avatarColor: '#ef4444' },
+            { name: 'Rachel Foster', initials: 'RF', amount: '4,750.00', status: 'Paid', date: 'May 1, 2026', avatarBg: 'rgba(34,197,94,0.12)', avatarColor: '#22c55e' },
+            { name: 'Tom Bradley', initials: 'TB', amount: '680.00', status: 'Paid', date: 'Apr 30, 2026', avatarBg: 'rgba(99,102,241,0.12)', avatarColor: '#6366f1' },
+            { name: 'Nina Patel', initials: 'NP', amount: '2,100.00', status: 'Paid', date: 'Apr 29, 2026', avatarBg: 'rgba(245,158,11,0.12)', avatarColor: '#f59e0b' },
+            { name: 'Alex Turner', initials: 'AT', amount: '325.00', status: 'Refunded', date: 'Apr 28, 2026', avatarBg: 'rgba(199,163,90,0.15)', avatarColor: 'var(--gold)' }
+        ],
+        init() {
+            this.$nextTick(() => { this.renderChart(); });
+        },
+        renderChart() {
+            const ctx = document.getElementById('revenueChart');
+            if (!ctx) return;
+
+            // Generate demo revenue data (13 weeks)
+            const seed = (n) => {
+                let x = Math.sin(n) * 10000;
+                return x - Math.floor(x);
+            };
+            const currentData = [];
+            const previousData = [];
+            const labels = [];
+            for (let i = 0; i < 13; i++) {
+                labels.push('W' + (i + 1));
+                currentData.push(Math.round(500 + seed(i * 7 + 3) * 4500));
+                previousData.push(Math.round(400 + seed(i * 7 + 19) * 3800));
+            }
+
+            const goldColor = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#c7a35a';
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Current Period',
+                            data: currentData,
+                            borderColor: goldColor,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            tension: 0.4,
+                            pointBackgroundColor: goldColor,
+                            pointBorderColor: goldColor,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const {ctx: c, chartArea} = chart;
+                                if (!chartArea) return 'transparent';
+                                const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                                gradient.addColorStop(0, 'rgba(199, 163, 90, 0.15)');
+                                gradient.addColorStop(1, 'rgba(199, 163, 90, 0)');
+                                return gradient;
+                            }
+                        },
+                        {
+                            label: 'Previous Period',
+                            data: previousData,
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1.5,
+                            borderDash: [6, 4],
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointBackgroundColor: 'rgba(255,255,255,0.3)',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 20, 30, 0.95)',
+                            titleColor: 'rgba(255,255,255,0.7)',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(199, 163, 90, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(199, 163, 90, 0.06)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.45)',
+                                font: { size: 11 }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(199, 163, 90, 0.08)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.45)',
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    return '$' + (value / 1000).toFixed(1) + 'k';
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    };
+}
+</script>
+{% endblock %}

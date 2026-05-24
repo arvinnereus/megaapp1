@@ -1,0 +1,396 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}{{ contact.name }}{% endblock %}
+{% block page_subtitle %}
+<div class="page-header breadcrumb" style="margin-bottom: 0;">
+    <a href="/admin/contacts" style="color: var(--text-subtle); font-size: 0.875rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 4px;"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Contacts
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div x-data="contactDetail()">
+    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; align-items: start;">
+
+        <!-- LEFT COLUMN: Contact Info -->
+        <div>
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h3 class="card-title flex items-center gap-3">
+                        <div class="avatar avatar-lg">{{ contact.name[0].upper() if contact.name else '?' }}</div>
+                        <span x-show="!editing">{{ contact.name }}</span>
+                        <span x-show="editing" x-cloak style="flex: 1;">
+                            <input type="text" x-model="form.name" style="font-size: 1rem; font-weight: 600;">
+                        </span>
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-sm btn-outline" @click="toggleEdit()" x-show="!editing">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit
+                        </button>
+                        <button class="btn btn-sm btn-primary" @click="saveContact()" x-show="editing" x-cloak :disabled="saving">
+                            <span x-show="!saving">Save</span>
+                            <span x-show="saving" class="flex items-center gap-2"><span class="spinner spinner-sm"></span> Saving...</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline" @click="cancelEdit()" x-show="editing" x-cloak>Cancel</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Display Mode -->
+                    <div x-show="!editing">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <div class="form-label" style="margin-bottom: 4px;">Email</div>
+                                <div style="color: var(--text-primary); font-size: 0.875rem;">
+                                    {% if contact.email %}
+                                    <a href="mailto:{{ contact.email }}" style="color: var(--gold);">{{ contact.email }}</a>
+                                    {% else %}
+                                    <span style="color: var(--text-subtle);">--</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <div class="form-label" style="margin-bottom: 4px;">Phone</div>
+                                <div style="color: var(--text-primary); font-size: 0.875rem;">{{ contact.phone or '--' }}</div>
+                            </div>
+                            <div>
+                                <div class="form-label" style="margin-bottom: 4px;">Company</div>
+                                <div style="color: var(--text-primary); font-size: 0.875rem;">{{ contact.company or '--' }}</div>
+                            </div>
+                            <div>
+                                <div class="form-label" style="margin-bottom: 4px;">Status</div>
+                                <div>
+                                    {% if contact.status == 'Lead' %}
+                                        <span class="badge badge-lead">Lead</span>
+                                    {% elif contact.status == 'Customer' %}
+                                        <span class="badge badge-customer">Customer</span>
+                                    {% elif contact.status == 'VIP' %}
+                                        <span class="badge badge-vip">VIP</span>
+                                    {% elif contact.status == 'Inactive' %}
+                                        <span class="badge badge-inactive">Inactive</span>
+                                    {% else %}
+                                        <span class="badge badge-lead">{{ contact.status or 'Lead' }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <div class="form-label" style="margin-bottom: 4px;">Lead Source</div>
+                                <div style="color: var(--text-primary); font-size: 0.875rem;">{{ contact.lead_source or '--' }}</div>
+                            </div>
+                            <div>
+                                <div class="form-label" style="margin-bottom: 4px;">Created</div>
+                                <div style="color: var(--text-muted); font-size: 0.8125rem;">
+                                    {{ contact.created_at.strftime('%b %d, %Y at %I:%M %p') if contact.created_at else '--' }}
+                                </div>
+                            </div>
+                        </div>
+                        {% if contact.updated_at %}
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light); font-size: 0.75rem; color: var(--text-subtle);">
+                            Last updated: {{ contact.updated_at.strftime('%b %d, %Y at %I:%M %p') }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div x-show="editing" x-cloak>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Email</label>
+                                <input type="email" x-model="form.email" placeholder="email@example.com">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" x-model="form.phone" placeholder="(555) 123-4567">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Company</label>
+                                <input type="text" x-model="form.company" placeholder="Company name">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Status</label>
+                                <select x-model="form.status">
+                                    <option value="Lead">Lead</option>
+                                    <option value="Customer">Customer</option>
+                                    <option value="VIP">VIP</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Lead Source</label>
+                                <select x-model="form.lead_source">
+                                    <option value="">Select source...</option>
+                                    <option value="Website">Website</option>
+                                    <option value="Referral">Referral</option>
+                                    <option value="Social Media">Social Media</option>
+                                    <option value="Email Campaign">Email Campaign</option>
+                                    <option value="Cold Outreach">Cold Outreach</option>
+                                    <option value="Event">Event</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer" x-show="!editing">
+                    <button class="btn btn-sm btn-danger" @click="showDeleteModal = true" style="margin-right: auto;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Delete Contact
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Notes, Deals, Activity -->
+        <div>
+            <!-- Notes Card -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        Notes
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Add Note -->
+                    <div style="margin-bottom: 16px;">
+                        <textarea x-model="newNote" placeholder="Add a note..." style="min-height: 70px; margin-bottom: 8px;"></textarea>
+                        <button class="btn btn-sm btn-primary" @click="addNote()" :disabled="!newNote.trim() || addingNote">
+                            <span x-show="!addingNote">Add Note</span>
+                            <span x-show="addingNote" class="flex items-center gap-2"><span class="spinner spinner-sm"></span> Adding...</span>
+                        </button>
+                    </div>
+
+                    <!-- Notes List -->
+                    {% if contact.notes %}
+                    <div style="border-top: 1px solid var(--border-light); padding-top: 16px;">
+                        {% for note in contact.notes|sort(attribute='created_at', reverse=true) %}
+                        <div style="padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                            <p style="color: var(--text-primary); font-size: 0.875rem; white-space: pre-wrap; margin-bottom: 4px;">{{ note.content }}</p>
+                            <span style="font-size: 0.6875rem; color: var(--text-subtle);">
+                                {{ note.created_at.strftime('%b %d, %Y at %I:%M %p') if note.created_at else '' }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p style="color: var(--text-subtle); font-size: 0.8125rem; text-align: center; padding: 12px 0;">No notes yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Deals Card -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 6px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        Deals
+                    </h3>
+                    <a href="/admin/deals" class="btn btn-sm btn-ghost">View Pipeline</a>
+                </div>
+                <div class="card-body">
+                    {% if deals %}
+                    {% for deal in deals %}
+                    <div style="padding: 12px 0; border-bottom: 1px solid var(--border-light); {% if loop.last %}border-bottom: none;{% endif %}">
+                        <div class="flex items-center justify-between" style="margin-bottom: 4px;">
+                            <span style="font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">{{ deal.title }}</span>
+                            <span style="font-weight: 700; color: var(--gold); font-size: 0.875rem;">${{ "{:,.0f}".format(deal.value) if deal.value else '0' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% if deal.stage == 'Won' %}
+                                <span class="badge badge-won">Won</span>
+                            {% elif deal.stage == 'Lost' %}
+                                <span class="badge badge-lost">Lost</span>
+                            {% elif deal.stage == 'Negotiation' %}
+                                <span class="badge badge-negotiation">{{ deal.stage }}</span>
+                            {% else %}
+                                <span class="badge badge-prospect">{{ deal.stage }}</span>
+                            {% endif %}
+                            {% if deal.expected_close_date %}
+                            <span style="font-size: 0.6875rem; color: var(--text-subtle);">Close: {{ deal.expected_close_date.strftime('%b %d, %Y') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color: var(--text-subtle); font-size: 0.8125rem; text-align: center; padding: 12px 0;">No deals associated with this contact.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 6px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Activity
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if activities %}
+                    <div class="timeline">
+                        {% for activity in activities %}
+                        <div class="timeline-item">
+                            <div class="timeline-dot
+                                {% if 'created' in activity.action_type %}success
+                                {% elif 'moved' in activity.action_type %}warning
+                                {% elif 'deleted' in activity.action_type %}danger
+                                {% endif %}
+                            "></div>
+                            <div class="timeline-content">
+                                <p style="color: var(--text-primary); font-size: 0.8125rem; margin-bottom: 4px;">{{ activity.description }}</p>
+                                <span class="timeline-time">{{ activity.created_at.strftime('%b %d, %Y at %I:%M %p') if activity.created_at else '' }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p style="color: var(--text-subtle); font-size: 0.8125rem; text-align: center; padding: 12px 0;">No activity recorded.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" x-show="showDeleteModal" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click.self="showDeleteModal = false"
+         @keydown.escape.window="showDeleteModal = false">
+        <div class="modal" style="max-width: 420px;" @click.stop>
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: var(--danger);">Delete Contact</h3>
+                <button class="modal-close" @click="showDeleteModal = false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); font-size: 0.875rem;">
+                    Are you sure you want to delete <strong style="color: var(--text-primary);">{{ contact.name }}</strong>?
+                    This action cannot be undone. All associated notes and activity will also be removed.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" @click="showDeleteModal = false">Cancel</button>
+                <button class="btn btn-danger" @click="deleteContact()" :disabled="deleting">
+                    <span x-show="!deleting">Delete Forever</span>
+                    <span x-show="deleting" class="flex items-center gap-2"><span class="spinner spinner-sm"></span> Deleting...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        div[style*="grid-template-columns: 3fr 2fr"] {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function contactDetail() {
+    return {
+        editing: false,
+        saving: false,
+        deleting: false,
+        addingNote: false,
+        showDeleteModal: false,
+        newNote: '',
+        form: {
+            name: '{{ contact.name|e }}',
+            email: '{{ contact.email|default("", true)|e }}',
+            phone: '{{ contact.phone|default("", true)|e }}',
+            company: '{{ contact.company|default("", true)|e }}',
+            status: '{{ contact.status|default("Lead", true)|e }}',
+            lead_source: '{{ contact.lead_source|default("", true)|e }}'
+        },
+        originalForm: null,
+
+        toggleEdit() {
+            this.originalForm = { ...this.form };
+            this.editing = true;
+        },
+
+        cancelEdit() {
+            this.form = { ...this.originalForm };
+            this.editing = false;
+        },
+
+        async saveContact() {
+            if (!this.form.name.trim()) return;
+            this.saving = true;
+            try {
+                const resp = await fetch('/api/contacts/{{ contact.id }}', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.form)
+                });
+                if (resp.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || 'Failed to update contact');
+                    this.saving = false;
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+                this.saving = false;
+            }
+        },
+
+        async deleteContact() {
+            this.deleting = true;
+            try {
+                const resp = await fetch('/api/contacts/{{ contact.id }}', {
+                    method: 'DELETE'
+                });
+                if (resp.ok) {
+                    window.location.href = '/admin/contacts';
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || 'Failed to delete contact');
+                    this.deleting = false;
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+                this.deleting = false;
+            }
+        },
+
+        async addNote() {
+            if (!this.newNote.trim()) return;
+            this.addingNote = true;
+            try {
+                const resp = await fetch('/api/contacts/{{ contact.id }}/notes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: this.newNote })
+                });
+                if (resp.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || 'Failed to add note');
+                    this.addingNote = false;
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+                this.addingNote = false;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

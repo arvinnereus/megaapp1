@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_name }} - Purchase Complete{% endblock %}
+
+{% block body %}
+<div style="background: var(--bg-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div style="text-align: center; max-width: 500px; padding: 24px;">
+        <div style="width: 72px; height: 72px; background: rgba(34,197,94,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h1 style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Purchase Complete!</h1>
+        <p style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 32px;">
+            Thank you for your purchase. You should receive a confirmation email shortly with your access details.
+        </p>
+        <a href="/store" class="btn btn-outline">Back to Store</a>
+    </div>
+</div>
+{% endblock %}

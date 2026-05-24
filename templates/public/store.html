@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_name }} - Store{% endblock %}
+
+{% block body %}
+<div style="background: var(--bg-primary); min-height: 100vh;">
+    <!-- Header -->
+    <div style="padding: 40px 24px 0; text-align: center;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Our Products</h1>
+        <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px;">Digital products and resources to help you grow.</p>
+    </div>
+
+    <!-- Products Grid -->
+    <div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 60px;" x-data="storePage()">
+        {% if products %}
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+            {% for product in products %}
+            <div class="card" style="overflow: hidden;">
+                {% if product.image_url %}
+                <div style="height: 180px; background: url('{{ product.image_url }}') center/cover no-repeat; border-bottom: 1px solid var(--border-light);"></div>
+                {% endif %}
+                <div class="card-body" style="padding: 20px;">
+                    <h3 style="color: var(--text-primary); font-weight: 600; font-size: 1.125rem; margin-bottom: 8px;">{{ product.name }}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 16px; line-height: 1.6;">{{ product.description[:150] if product.description else '' }}{{ '...' if product.description and product.description|length > 150 else '' }}</p>
+                    <div class="flex items-center justify-between">
+                        <span style="color: var(--gold); font-weight: 700; font-size: 1.25rem;">
+                            {% if product.product_type == 'free' %}FREE{% else %}${{ "{:,.2f}".format(product.price) }}{% endif %}
+                        </span>
+                        <button class="btn btn-primary" @click="checkout({{ product.id }})" :disabled="loading === {{ product.id }}">
+                            <span x-show="loading !== {{ product.id }}">
+                                {% if product.product_type == 'free' %}Get Free{% else %}Buy Now{% endif %}
+                            </span>
+                            <span x-show="loading === {{ product.id }}" class="flex items-center gap-2">
+                                <span class="spinner spinner-sm"></span> Processing...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 24px;">
+            <p style="color: var(--text-subtle); font-size: 1.1rem;">No products available right now. Check back soon!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @media (max-width: 1024px) {
+        div[style*="grid-template-columns: repeat(3"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+    @media (max-width: 640px) {
+        div[style*="grid-template-columns: repeat(3"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function storePage() {
+    return {
+        loading: null,
+        async checkout(productId) {
+            this.loading = productId;
+            try {
+                const resp = await fetch('/api/checkout/' + productId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await resp.json();
+                if (resp.ok && data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert(data.error || 'Checkout failed. Please try again.');
+                    this.loading = null;
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+                this.loading = null;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

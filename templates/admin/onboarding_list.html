@@ -1,0 +1,158 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Survey Responses{% endblock %}
+
+{% block content %}
+<style>
+    .survey-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .survey-table th {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--border);
+    }
+    .survey-table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+    }
+    .survey-table tr:hover td {
+        background: rgba(199, 163, 90, 0.04);
+    }
+    .view-btn {
+        padding: 0.35rem 0.75rem;
+        background: rgba(199, 163, 90, 0.1);
+        border: 1px solid rgba(199, 163, 90, 0.3);
+        border-radius: 6px;
+        color: var(--gold);
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .view-btn:hover {
+        background: rgba(199, 163, 90, 0.2);
+    }
+    .answers-panel {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 0.5rem 0;
+    }
+    .answer-item {
+        margin-bottom: 0.75rem;
+    }
+    .answer-item:last-child {
+        margin-bottom: 0;
+    }
+    .answer-question {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gold);
+        margin-bottom: 0.2rem;
+    }
+    .answer-text {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-tertiary);
+    }
+    .empty-state h3 {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        margin: 0 0 0.5rem;
+    }
+    .empty-state p {
+        font-size: 0.9rem;
+        margin: 0;
+    }
+</style>
+
+<div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+
+    {% if responses %}
+    <table class="survey-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resp in responses %}
+            <tr x-data="{ showAnswers: false }">
+                <td>
+                    <div style="color: var(--text-primary); font-weight: 500;">{{ resp.respondent_name }}</div>
+                </td>
+                <td>{{ resp.respondent_email }}</td>
+                <td style="white-space: nowrap;">{{ resp.submitted_at.strftime('%b %d, %Y') if resp.submitted_at else 'N/A' }}</td>
+                <td>
+                    <button class="view-btn" @click="showAnswers = !showAnswers" x-text="showAnswers ? 'Hide' : 'View'"></button>
+                </td>
+            </tr>
+            <tr x-data="{ showAnswers: false }" x-show="false" style="display: none;">
+                <!-- This hidden row is needed because Alpine scoping on table rows requires a workaround -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Expanded answer panels rendered outside the table for proper layout -->
+    <div style="padding: 0 1rem 1rem;" x-data="{ expandedMap: {} }">
+        {% for resp in responses %}
+        <div x-data="{ open: false }" style="margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.25rem; border-bottom: 1px solid var(--border);">
+                <div>
+                    <span style="color: var(--text-primary); font-weight: 500; font-size: 0.9rem;">{{ resp.respondent_name }}</span>
+                    <span style="color: var(--text-tertiary); font-size: 0.85rem; margin-left: 0.75rem;">{{ resp.respondent_email }}</span>
+                    <span style="color: var(--text-tertiary); font-size: 0.8rem; margin-left: 0.75rem;">{{ resp.submitted_at.strftime('%b %d, %Y at %I:%M %p') if resp.submitted_at else 'N/A' }}</span>
+                </div>
+                <button class="view-btn" @click="open = !open" x-text="open ? 'Hide' : 'View Answers'"></button>
+            </div>
+            <div x-show="open" x-transition style="display: none;">
+                <div class="answers-panel">
+                    {% set answer_data = resp.answers | tojson %}
+                    <div x-data="{ answers: JSON.parse({{ answer_data }}) }">
+                        {% for qid, qtext in questions.items() %}
+                        <template x-if="answers['{{ qid }}']">
+                            <div class="answer-item">
+                                <div class="answer-question">{{ qtext }}</div>
+                                <div class="answer-text" x-text="answers['{{ qid }}']"></div>
+                            </div>
+                        </template>
+                        {% endfor %}
+                        <template x-if="Object.keys(answers).length === 0">
+                            <div style="color: var(--text-tertiary); font-size: 0.85rem; font-style: italic;">No survey answers recorded (contact info only).</div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <h3>No survey responses yet</h3>
+        <p>Share your onboarding survey link to start collecting responses.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

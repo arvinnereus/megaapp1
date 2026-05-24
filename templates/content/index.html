@@ -1,0 +1,180 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Content Library{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Manage your automated content pipeline.</p>{% endblock %}
+
+{% block page_actions %}
+<a href="/content/create" class="btn btn-primary">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Create Content
+</a>
+{% endblock %}
+
+{% block content %}
+<div x-data="contentLibrary()">
+
+    <!-- Stats Row -->
+    <div class="grid-4" style="margin-bottom: 24px;">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|length }}</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|selectattr('status', 'in', ['processing', 'scraping', 'scripting', 'imaging', 'videoing'])|list|length }}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--gold-tint);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|selectattr('status', 'equalto', 'ready')|list|length }}</div>
+                <div class="stat-label">Ready to Post</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div>
+                <div class="stat-value">{{ items|selectattr('status', 'equalto', 'published')|list|length }}</div>
+                <div class="stat-label">Published</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex items-center gap-3" style="margin-bottom: 24px;">
+        <button class="btn btn-sm" :class="filter === 'all' ? 'btn-secondary' : 'btn-outline'" @click="filter = 'all'">All</button>
+        <button class="btn btn-sm" :class="filter === 'draft' ? 'btn-secondary' : 'btn-outline'" @click="filter = 'draft'">Draft</button>
+        <button class="btn btn-sm" :class="filter === 'processing' ? 'btn-secondary' : 'btn-outline'" @click="filter = 'processing'">Processing</button>
+        <button class="btn btn-sm" :class="filter === 'ready' ? 'btn-secondary' : 'btn-outline'" @click="filter = 'ready'">Ready</button>
+        <button class="btn btn-sm" :class="filter === 'published' ? 'btn-secondary' : 'btn-outline'" @click="filter = 'published'">Published</button>
+    </div>
+
+    <!-- Content Grid -->
+    {% if items|length > 0 %}
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        {% for item in items %}
+        <a href="/content/{{ item.id }}"
+           class="card"
+           style="display: block; text-decoration: none; overflow: hidden; transition: border-color 0.2s;"
+           x-show="filterMatch('{{ item.status }}')"
+           x-transition>
+            <!-- Thumbnail -->
+            <div style="height: 160px; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid var(--border-light);">
+                {% if item.r2_image_url or item.image_url %}
+                <img src="{{ item.r2_image_url or item.image_url }}" alt="Content thumbnail" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+                {% else %}
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="1.5" style="opacity: 0.3;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {% endif %}
+            </div>
+            <!-- Body -->
+            <div style="padding: 16px;">
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem; margin-bottom: 10px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ item.article_title or item.input_text[:50] }}{% if item.input_text|length > 50 and not item.article_title %}...{% endif %}
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <!-- Platform Badge -->
+                        <span class="badge" style="font-size: 0.7rem;">
+                            {{ (item.platform or 'instagram')|capitalize }}
+                        </span>
+                        <!-- Status Badge -->
+                        {% if item.status in ['processing', 'scraping', 'scripting', 'imaging', 'videoing'] %}
+                        <span class="badge" style="background: rgba(245,158,11,0.15); color: var(--warning); font-size: 0.7rem;">Processing</span>
+                        {% elif item.status == 'ready' or item.status == 'complete' %}
+                        <span class="badge" style="background: var(--gold-tint); color: var(--gold); font-size: 0.7rem;">Ready</span>
+                        {% elif item.status == 'published' %}
+                        <span class="badge" style="background: rgba(34,197,94,0.15); color: var(--success); font-size: 0.7rem;">Published</span>
+                        {% elif item.status == 'error' %}
+                        <span class="badge" style="background: rgba(239,68,68,0.15); color: var(--danger); font-size: 0.7rem;">Error</span>
+                        {% else %}
+                        <span class="badge" style="background: var(--bg-secondary); color: var(--text-subtle); font-size: 0.7rem;">Draft</span>
+                        {% endif %}
+                    </div>
+                    <span style="color: var(--text-subtle); font-size: 0.75rem;">
+                        {{ item.created_at.strftime('%b %d') if item.created_at else '' }}
+                    </span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="1.5" style="opacity: 0.4;"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </div>
+            <h3 class="empty-state-heading">No content yet</h3>
+            <p class="empty-state-description">Create your first automated post to get started.</p>
+            <a href="/content/create" class="btn btn-primary" style="margin-top: 12px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Your First Post
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    @media (max-width: 1024px) {
+        div[style*="grid-template-columns: repeat(3"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+    @media (max-width: 640px) {
+        div[style*="grid-template-columns: repeat(3"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+// Fire confetti if redirected after content creation
+if (window.location.search.includes('celebrate=1')) {
+    window.history.replaceState({}, '', '/content');
+    setTimeout(function() {
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#FFD700', '#FFA500', '#C7A35A', '#ffffff', '#22c55e'] });
+        setTimeout(function() {
+            confetti({ particleCount: 80, spread: 100, origin: { y: 0.5, x: 0.3 }, colors: ['#FFD700', '#FFA500'] });
+            confetti({ particleCount: 80, spread: 100, origin: { y: 0.5, x: 0.7 }, colors: ['#C7A35A', '#22c55e'] });
+        }, 300);
+        if (window.showToast) showToast('Content created successfully!', 'success');
+    }, 500);
+}
+
+function contentLibrary() {
+    return {
+        filter: 'all',
+        filterMatch(status) {
+            if (this.filter === 'all') return true;
+            if (this.filter === 'processing') {
+                return ['processing', 'scraping', 'scripting', 'imaging', 'videoing'].includes(status);
+            }
+            if (this.filter === 'ready') {
+                return ['ready', 'complete'].includes(status);
+            }
+            return status === this.filter;
+        }
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Manage API keys, integrations, and business settings.</p>{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ url_for('admin.save_settings') }}" x-data="{ saved: false }" @submit="setTimeout(() => saved = false, 3000)">
+
+    <!-- Business Settings -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                Business Settings
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('BUSINESS_NAME') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    Business Name
+                </label>
+                <input type="text" name="BUSINESS_NAME" value="{{ settings.get('BUSINESS_NAME', '') }}" placeholder="Your Business Name">
+            </div>
+        </div>
+    </div>
+
+    <!-- Headshot / Reference Image -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Headshot / Brand Character
+            </h3>
+            <span style="color: var(--text-subtle); font-size: 0.75rem;">Used in AI image & video generation</span>
+        </div>
+        <div class="card-body">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Upload a headshot photo. This face will appear in your AI-generated images and videos as the brand character.</p>
+            {% if settings.get('HEADSHOT_URL') %}
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                <img src="{{ settings.get('HEADSHOT_URL') }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold);">
+                <div>
+                    <div style="color: var(--success); font-size: 0.85rem; font-weight: 600;">Headshot uploaded</div>
+                    <div style="color: var(--text-subtle); font-size: 0.75rem;">This photo will be used as a reference in image and video generation.</div>
+                </div>
+            </div>
+            {% endif %}
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="file" id="headshot-file" accept="image/*" style="display: none;" onchange="uploadHeadshot(this)">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('headshot-file').click()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    {{ 'Change Headshot' if settings.get('HEADSHOT_URL') else 'Upload Headshot' }}
+                </button>
+                <span id="headshot-status" style="color: var(--text-subtle); font-size: 0.8rem;"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    async function uploadHeadshot(input) {
+        if (!input.files || !input.files[0]) return;
+        var status = document.getElementById('headshot-status');
+        status.textContent = 'Uploading...';
+        status.style.color = 'var(--gold)';
+        var formData = new FormData();
+        formData.append('headshot', input.files[0]);
+        try {
+            var resp = await fetch('/api/upload-headshot', { method: 'POST', body: formData });
+            var data = await resp.json();
+            if (data.url) {
+                status.textContent = 'Uploaded! Reloading...';
+                status.style.color = 'var(--success)';
+                setTimeout(function() { window.location.reload(); }, 1000);
+            } else {
+                status.textContent = 'Upload failed: ' + (data.error || 'Unknown error');
+                status.style.color = 'var(--danger)';
+            }
+        } catch(e) {
+            status.textContent = 'Upload failed: ' + e.message;
+            status.style.color = 'var(--danger)';
+        }
+    }
+    </script>
+
+    <!-- AI & Content APIs -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                AI & Content APIs
+            </h3>
+        </div>
+        <div class="card-body">
+            <!-- Jackie AI Provider -->
+            <div style="background: rgba(199,163,90,0.06); border: 1px solid rgba(199,163,90,0.15); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                <div style="font-size: 0.82rem; font-weight: 600; color: var(--gold); margin-bottom: 6px;">Jackie AI Chat Provider</div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+                        <input type="radio" name="CHAT_PROVIDER" value="openai" {% if settings.get('CHAT_PROVIDER', 'openai') == 'openai' %}checked{% endif %} style="accent-color: var(--gold);">
+                        OpenAI (direct)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text-secondary);">
+                        <input type="radio" name="CHAT_PROVIDER" value="openrouter" {% if settings.get('CHAT_PROVIDER') == 'openrouter' %}checked{% endif %} style="accent-color: var(--gold);">
+                        OpenRouter
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('OPENAI_API_KEY') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    OpenAI API Key
+                </label>
+                <input type="password" name="OPENAI_API_KEY" value="" placeholder="{% if settings.get('OPENAI_API_KEY') %}****{{ settings.get('OPENAI_API_KEY', '')[-4:] }}{% else %}sk-proj-...{% endif %}">
+                <p class="form-help">Powers Jackie AI chat and content generation when using OpenAI. Get yours at platform.openai.com</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('OPENROUTER_API_KEY') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    OpenRouter API Key
+                </label>
+                <input type="password" name="OPENROUTER_API_KEY" value="" placeholder="{% if settings.get('OPENROUTER_API_KEY') %}****{{ settings.get('OPENROUTER_API_KEY', '')[-4:] }}{% else %}sk-or-...{% endif %}">
+                <p class="form-help">Alternative AI provider. Access Claude, GPT-4, Gemini, and more via openrouter.ai</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('FIRECRAWL_API_KEY') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    FireCrawl API Key
+                </label>
+                <input type="password" name="FIRECRAWL_API_KEY" value="" placeholder="{% if settings.get('FIRECRAWL_API_KEY') %}****{{ settings.get('FIRECRAWL_API_KEY', '')[-4:] }}{% else %}fc-...{% endif %}">
+                <p class="form-help">Scrapes URLs for the content pipeline. Get yours at firecrawl.dev</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('KIE_AI_API_KEY') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    Kie.ai API Key
+                </label>
+                <input type="password" name="KIE_AI_API_KEY" value="" placeholder="{% if settings.get('KIE_AI_API_KEY') %}****{{ settings.get('KIE_AI_API_KEY', '')[-4:] }}{% else %}Bearer ...{% endif %}">
+                <p class="form-help">AI image generation (Nano Banana Pro). Sign up at kie.ai ~$0.09/image</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('ZERNIO_API_KEY') or settings.get('GETLATE_API_KEY') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    Zernio API Key
+                </label>
+                <input type="password" name="ZERNIO_API_KEY" value="" placeholder="{% if settings.get('ZERNIO_API_KEY') or settings.get('GETLATE_API_KEY') %}****{{ (settings.get('ZERNIO_API_KEY') or settings.get('GETLATE_API_KEY', ''))[-4:] }}{% else %}sk_...{% endif %}">
+                <p class="form-help">Social media scheduling and publishing. Sign up at zernio.com</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('ZERNIO_PROFILE_ID') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    Zernio Profile ID
+                </label>
+                <input type="text" name="ZERNIO_PROFILE_ID" value="{{ settings.get('ZERNIO_PROFILE_ID', '') }}" placeholder="Your Zernio profile ID">
+                <p class="form-help">Found in your Zernio dashboard under profile settings.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRM Integrations -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                CRM Integrations
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('STRIPE_SECRET_KEY') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        Stripe Secret Key
+                    </label>
+                    <input type="password" name="STRIPE_SECRET_KEY" value="" placeholder="{% if settings.get('STRIPE_SECRET_KEY') %}****{{ settings.get('STRIPE_SECRET_KEY', '')[-4:] }}{% else %}sk_live_...{% endif %}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('STRIPE_PUBLISHABLE_KEY') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        Stripe Publishable Key
+                    </label>
+                    <input type="password" name="STRIPE_PUBLISHABLE_KEY" value="" placeholder="{% if settings.get('STRIPE_PUBLISHABLE_KEY') %}****{{ settings.get('STRIPE_PUBLISHABLE_KEY', '')[-4:] }}{% else %}pk_live_...{% endif %}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('RESEND_API_KEY') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        Resend API Key
+                    </label>
+                    <input type="password" name="RESEND_API_KEY" value="" placeholder="{% if settings.get('RESEND_API_KEY') %}****{{ settings.get('RESEND_API_KEY', '')[-4:] }}{% else %}re_...{% endif %}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('RESEND_FROM_EMAIL') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        Resend From Email
+                    </label>
+                    <input type="text" name="RESEND_FROM_EMAIL" value="{{ settings.get('RESEND_FROM_EMAIL', '') }}" placeholder="noreply@yourdomain.com">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Storage (Cloudflare R2)
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('R2_ACCOUNT_ID') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        R2 Account ID
+                    </label>
+                    <input type="password" name="R2_ACCOUNT_ID" value="" placeholder="{% if settings.get('R2_ACCOUNT_ID') %}****{{ settings.get('R2_ACCOUNT_ID', '')[-4:] }}{% else %}Account ID{% endif %}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('R2_BUCKET_NAME') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        R2 Bucket Name
+                    </label>
+                    <input type="text" name="R2_BUCKET_NAME" value="{{ settings.get('R2_BUCKET_NAME', '') }}" placeholder="my-bucket">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('R2_ACCESS_KEY_ID') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        R2 Access Key ID
+                    </label>
+                    <input type="password" name="R2_ACCESS_KEY_ID" value="" placeholder="{% if settings.get('R2_ACCESS_KEY_ID') %}****{{ settings.get('R2_ACCESS_KEY_ID', '')[-4:] }}{% else %}Access Key ID{% endif %}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if settings.get('R2_SECRET_ACCESS_KEY') %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                        {% else %}
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                        {% endif %}
+                        R2 Secret Access Key
+                    </label>
+                    <input type="password" name="R2_SECRET_ACCESS_KEY" value="" placeholder="{% if settings.get('R2_SECRET_ACCESS_KEY') %}****{{ settings.get('R2_SECRET_ACCESS_KEY', '')[-4:] }}{% else %}Secret Access Key{% endif %}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    {% if settings.get('R2_PUBLIC_URL') %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 6px;"></span>
+                    {% else %}
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); margin-right: 6px;"></span>
+                    {% endif %}
+                    R2 Public URL
+                </label>
+                <input type="text" name="R2_PUBLIC_URL" value="{{ settings.get('R2_PUBLIC_URL', '') }}" placeholder="https://pub-xxxx.r2.dev">
+                <p class="form-help">The public URL prefix for accessing stored files.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding-bottom: 48px;">
+        <button type="submit" class="btn btn-primary btn-lg" @click="saved = true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Settings
+        </button>
+    </div>
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for category, message in messages %}
+        if (window.showToast) {
+            showToast('{{ message }}', '{{ category }}');
+        } else {
+            alert('{{ message }}');
+        }
+        {% endfor %}
+    });
+</script>
+{% endif %}
+{% endwith %}
+{% endblock %}

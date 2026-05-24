@@ -1,0 +1,1017 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Manual & Help{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Step-by-step guides to set up, use, and sell this system.</p>{% endblock %}
+
+{% block content %}
+<style>
+    .guide-container { max-width: 820px; margin: 0 auto; padding: 0 0.5rem 4rem; }
+
+    /* Tab Navigation */
+    .guide-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+    .guide-tab {
+        padding: 0.7rem 1.25rem; font-size: 0.9rem; font-weight: 600;
+        color: var(--text-tertiary); background: none; border: none; cursor: pointer;
+        position: relative; transition: color 0.2s;
+    }
+    .guide-tab:hover { color: var(--text-secondary); }
+    .guide-tab.active { color: var(--gold); }
+    .guide-tab.active::after {
+        content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+        height: 2px; background: var(--gold);
+    }
+
+    /* Progress Bar */
+    .progress-bar-wrap {
+        background: rgba(255,255,255,0.04); border-radius: 6px; height: 8px;
+        margin-bottom: 1.5rem; overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%; background: var(--gold); border-radius: 6px;
+        transition: width 0.4s ease;
+    }
+    .progress-label {
+        font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.5rem;
+        display: flex; justify-content: space-between;
+    }
+
+    /* Section Headers */
+    .guide-section { margin-bottom: 1.5rem; }
+    .guide-section-header {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 0.6rem 0; margin-bottom: 0.25rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .guide-section-header h2 {
+        font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0;
+    }
+    .section-badge {
+        font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.5rem;
+        border-radius: 8px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    /* Checklist Items */
+    .step-item {
+        border: 1px solid var(--border); border-radius: 10px;
+        margin-bottom: 0.5rem; overflow: hidden;
+        transition: border-color 0.2s;
+    }
+    .step-item.completed { border-color: rgba(16, 185, 129, 0.25); }
+    .step-header {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.85rem 1rem; cursor: pointer;
+        transition: background 0.15s;
+    }
+    .step-header:hover { background: rgba(255,255,255,0.02); }
+    .step-checkbox {
+        width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+        border: 2px solid rgba(199, 163, 90, 0.4); background: transparent;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .step-checkbox.checked {
+        background: var(--gold); border-color: var(--gold);
+    }
+    .step-checkbox svg { width: 14px; height: 14px; }
+    .step-title {
+        font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
+        flex: 1; line-height: 1.4;
+    }
+    .step-item.completed .step-title {
+        color: var(--text-tertiary); text-decoration: line-through;
+        text-decoration-color: rgba(199, 163, 90, 0.4);
+    }
+    .step-expand {
+        color: var(--text-subtle); transition: transform 0.2s;
+    }
+    .step-expand.open { transform: rotate(180deg); }
+    .step-body {
+        padding: 0 1rem 1rem 3.25rem;
+        font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65;
+    }
+    .step-body p { margin: 0 0 0.6rem; }
+    .step-body .step-action {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.35rem 0.7rem; background: rgba(199, 163, 90, 0.1);
+        border: 1px solid rgba(199, 163, 90, 0.3); border-radius: 6px;
+        color: var(--gold); text-decoration: none; font-size: 0.82rem;
+        font-weight: 600; transition: background 0.2s; margin-top: 0.25rem;
+    }
+    .step-body .step-action:hover { background: rgba(199, 163, 90, 0.2); }
+    .step-substeps {
+        list-style: none; padding: 0; margin: 0.5rem 0 0;
+    }
+    .step-substeps li {
+        padding: 0.3rem 0 0.3rem 1.1rem; position: relative;
+        font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;
+    }
+    .step-substeps li::before {
+        content: ''; position: absolute; left: 0; top: 0.65rem;
+        width: 5px; height: 5px; border-radius: 50%;
+        background: rgba(199, 163, 90, 0.5);
+    }
+
+    /* Code blocks */
+    .guide-code {
+        background: rgba(0,0,0,0.3); border-radius: 6px; padding: 0.75rem;
+        font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.76rem;
+        line-height: 1.7; color: var(--text-secondary); overflow-x: auto;
+        margin: 0.5rem 0;
+    }
+    .guide-code .hl { color: var(--gold); }
+    .guide-code .val { color: #8ECAE6; }
+
+    /* Callout boxes */
+    .guide-callout {
+        background: rgba(199, 163, 90, 0.06); border: 1px solid rgba(199, 163, 90, 0.2);
+        border-radius: 8px; padding: 0.85rem 1rem; margin: 0.75rem 0;
+        font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55;
+    }
+    .guide-callout strong { color: var(--gold); }
+
+    /* Pricing grid */
+    .pkg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin: 0.6rem 0; }
+    .pkg-card {
+        background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+        padding: 0.85rem; transition: border-color 0.2s;
+    }
+    .pkg-card.featured { border-color: var(--gold); }
+    .pkg-tier { font-size: 0.7rem; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em; }
+    .pkg-price { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0.2rem 0; }
+    .pkg-price span { font-size: 0.75rem; color: var(--text-tertiary); font-weight: 400; }
+    .pkg-list { list-style: none; padding: 0; margin: 0.35rem 0 0; }
+    .pkg-list li { font-size: 0.76rem; color: var(--text-secondary); padding: 0.15rem 0 0.15rem 0.9rem; position: relative; }
+    .pkg-list li::before { content: ''; position: absolute; left: 0; top: 0.45rem; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
+
+    /* Revenue math */
+    .rev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; text-align: center; margin: 0.5rem 0; }
+    .rev-item .rev-label { font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .rev-item .rev-amount { font-size: 1.2rem; font-weight: 700; color: var(--gold); }
+    .rev-item .rev-sub { font-size: 0.72rem; color: var(--text-tertiary); }
+
+    @media (max-width: 640px) {
+        .pkg-grid { grid-template-columns: 1fr; }
+        .rev-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="guide-container" x-data="guideApp()" x-init="loadProgress()">
+
+    <!-- Tab Navigation -->
+    <div class="guide-tabs">
+        <button class="guide-tab" :class="{ active: tab === 'use' }" @click="tab = 'use'">
+            I'm a Business Owner
+        </button>
+        <button class="guide-tab" :class="{ active: tab === 'sell' }" @click="tab = 'sell'">
+            I'm Selling This
+        </button>
+    </div>
+
+    <!-- ================================================================
+         TAB 1: BUSINESS OWNER — USE THIS IN YOUR BUSINESS
+    ================================================================= -->
+    <div x-show="tab === 'use'" x-transition.opacity>
+
+        <!-- Progress -->
+        <div class="progress-label">
+            <span>Your Setup Progress</span>
+            <span x-text="useCompleted + ' of ' + useTotal + ' steps'"></span>
+        </div>
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" :style="'width:' + (useTotal ? Math.round(useCompleted/useTotal*100) : 0) + '%'"></div>
+        </div>
+
+        <!-- SECTION 1: INITIAL SETUP -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>1. Initial Setup</h2>
+                <span class="section-badge" style="background: rgba(199,163,90,0.12); color: var(--gold);">Start Here</span>
+            </div>
+
+            <!-- Step: Change Login -->
+            <div class="step-item" :class="{ completed: checked('use','login') }">
+                <div class="step-header" @click="toggleExpand('use-login')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','login') }" @click.stop="toggle('use','login')">
+                        <svg x-show="checked('use','login')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Change your admin login credentials</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-login' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-login'" x-transition>
+                    <p>The app ships with default credentials. Change them immediately so only you can access the dashboard.</p>
+                    <ul class="step-substeps">
+                        <li>Open the <strong>.env</strong> file in your project folder</li>
+                        <li>Change <code>ADMIN_USER</code> to your preferred username</li>
+                        <li>Change <code>ADMIN_PASS</code> to a strong password</li>
+                        <li>Restart the app (<code>python app.py</code>)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Step: Business Name -->
+            <div class="step-item" :class="{ completed: checked('use','bizname') }">
+                <div class="step-header" @click="toggleExpand('use-bizname')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','bizname') }" @click.stop="toggle('use','bizname')">
+                        <svg x-show="checked('use','bizname')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Set your business name</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-bizname' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-bizname'" x-transition>
+                    <p>Your business name appears in the sidebar, emails, and landing pages. Set it once and it updates everywhere.</p>
+                    <a href="/admin/settings" class="step-action">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09"/></svg>
+                        Go to Settings
+                    </a>
+                </div>
+            </div>
+
+            <!-- Step: Headshot -->
+            <div class="step-item" :class="{ completed: checked('use','headshot') }">
+                <div class="step-header" @click="toggleExpand('use-headshot')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','headshot') }" @click.stop="toggle('use','headshot')">
+                        <svg x-show="checked('use','headshot')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Upload your headshot / brand photo</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-headshot' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-headshot'" x-transition>
+                    <p>Upload a headshot photo in Settings. This face will automatically appear in your AI-generated images and videos as your brand character -- making your content personal and recognizable.</p>
+                    <a href="/admin/settings" class="step-action">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Upload Headshot
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: API KEYS -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>2. Connect Your API Keys</h2>
+                <span class="section-badge" style="background: rgba(99,102,241,0.12); color: #6366f1;">Powers AI Features</span>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','openai') }">
+                <div class="step-header" @click="toggleExpand('use-openai')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','openai') }" @click.stop="toggle('use','openai')">
+                        <svg x-show="checked('use','openai')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Set up AI (OpenAI or OpenRouter)</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-openai' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-openai'" x-transition>
+                    <p>This powers Jackie AI (the chatbot) and content script generation. You need at least one:</p>
+                    <ul class="step-substeps">
+                        <li><strong>OpenAI (recommended):</strong> Sign up at platform.openai.com, create an API key, add it as <code>OPENAI_API_KEY</code> in your .env file. Set <code>CHAT_PROVIDER=openai</code></li>
+                        <li><strong>OpenRouter (alternative):</strong> Sign up at openrouter.ai, get an API key, add it as <code>OPENROUTER_API_KEY</code>. Set <code>CHAT_PROVIDER=openrouter</code>. This lets you use Claude, GPT-4, and other models.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','stripe') }">
+                <div class="step-header" @click="toggleExpand('use-stripe')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','stripe') }" @click.stop="toggle('use','stripe')">
+                        <svg x-show="checked('use','stripe')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Connect Stripe for payments</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-stripe' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-stripe'" x-transition>
+                    <p>Stripe handles payments for your digital products store. Skip this if you're not selling products yet.</p>
+                    <ul class="step-substeps">
+                        <li>Sign up at stripe.com and verify your business</li>
+                        <li>Go to Developers > API Keys in Stripe</li>
+                        <li>Copy your Secret Key and Publishable Key into .env</li>
+                        <li>Create a checkout link in Stripe and add it as <code>STRIPE_CHECKOUT_URL</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','email-api') }">
+                <div class="step-header" @click="toggleExpand('use-email-api')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','email-api') }" @click.stop="toggle('use','email-api')">
+                        <svg x-show="checked('use','email-api')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Set up email sending (Resend)</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-email-api' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-email-api'" x-transition>
+                    <p>Resend powers email campaigns and automated follow-ups. Free tier gives you 3,000 emails/month.</p>
+                    <ul class="step-substeps">
+                        <li>Sign up at resend.com</li>
+                        <li>Verify your domain (they walk you through adding DNS records)</li>
+                        <li>Copy your API key into <code>RESEND_API_KEY</code> in .env</li>
+                        <li>Set <code>RESEND_FROM_EMAIL</code> to your business email (e.g., hello@yourbusiness.com)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: CRM -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>3. Set Up Your CRM</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','contact') }">
+                <div class="step-header" @click="toggleExpand('use-contact')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','contact') }" @click.stop="toggle('use','contact')">
+                        <svg x-show="checked('use','contact')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Add your first real contact</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-contact' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-contact'" x-transition>
+                    <p>The app comes with demo contacts to show you how it works. Now add a real one -- a lead, customer, or client you're working with.</p>
+                    <ul class="step-substeps">
+                        <li>Go to <strong>Contacts</strong> in the sidebar</li>
+                        <li>Click <strong>+ Add Contact</strong></li>
+                        <li>Fill in name, email, phone, company, and set their status (Lead, Customer, Client, VIP)</li>
+                        <li>Add a note about your relationship or last interaction</li>
+                    </ul>
+                    <a href="/admin/contacts" class="step-action">Go to Contacts</a>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','deal') }">
+                <div class="step-header" @click="toggleExpand('use-deal')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','deal') }" @click.stop="toggle('use','deal')">
+                        <svg x-show="checked('use','deal')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Create your first deal</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-deal' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-deal'" x-transition>
+                    <p>Deals track your sales pipeline. Each deal moves through stages: New Lead, Contacted, Proposal, Negotiation, Won, or Lost.</p>
+                    <ul class="step-substeps">
+                        <li>Go to <strong>Deals</strong> in the sidebar</li>
+                        <li>Click <strong>+ New Deal</strong></li>
+                        <li>Link it to a contact, set the value, and choose a pipeline stage</li>
+                        <li>As conversations progress, drag the deal to the next stage</li>
+                    </ul>
+                    <a href="/admin/deals" class="step-action">Go to Deals</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: CONTENT -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>4. Create Your First Content</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','content') }">
+                <div class="step-header" @click="toggleExpand('use-content')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','content') }" @click.stop="toggle('use','content')">
+                        <svg x-show="checked('use','content')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Generate a content piece with AI</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-content' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-content'" x-transition>
+                    <p>The Content Studio generates scripts, images, videos, and captions automatically. Just give it a topic or paste a URL.</p>
+                    <ul class="step-substeps">
+                        <li>Go to <strong>Content > Create</strong></li>
+                        <li>Type a content idea (e.g., "5 tips for first-time home buyers") or paste a blog URL</li>
+                        <li>Select the platform (TikTok, Instagram, YouTube, etc.)</li>
+                        <li>Check "Include Video" if you want a video generated</li>
+                        <li>Click <strong>Generate</strong> and watch the pipeline work in real-time</li>
+                        <li>When done, you'll have a script, image, captions, and optionally a video -- ready to post</li>
+                    </ul>
+                    <a href="/content/create" class="step-action">Create Content Now</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: BOOKINGS -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>5. Set Up Bookings</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','bookings') }">
+                <div class="step-header" @click="toggleExpand('use-bookings')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','bookings') }" @click.stop="toggle('use','bookings')">
+                        <svg x-show="checked('use','bookings')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Configure your booking calendar</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-bookings' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-bookings'" x-transition>
+                    <p>Let clients and leads book time with you directly. The booking calendar is pre-loaded with Mon-Fri 9am-5pm slots.</p>
+                    <ul class="step-substeps">
+                        <li>Go to <strong>Bookings</strong> in the sidebar</li>
+                        <li>Review the default availability and adjust to your schedule</li>
+                        <li>Set slot types (consultation, follow-up, etc.)</li>
+                        <li>Share your booking link with clients: <code>/onboarding/book</code></li>
+                    </ul>
+                    <a href="/bookings" class="step-action">Go to Bookings</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 6: STORE -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>6. Digital Products & Store</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','product') }">
+                <div class="step-header" @click="toggleExpand('use-product')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','product') }" @click.stop="toggle('use','product')">
+                        <svg x-show="checked('use','product')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Create your first digital product</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-product' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-product'" x-transition>
+                    <p>Sell ebooks, PDFs, courses, templates, or any digital download. Requires Stripe to be connected for paid products.</p>
+                    <ul class="step-substeps">
+                        <li>Go to <strong>Digital Products</strong> in the sidebar</li>
+                        <li>Click <strong>+ New Product</strong></li>
+                        <li>Add title, description, price, and delivery URL (where the file is hosted)</li>
+                        <li>For free lead magnets, set price to $0 and type to "free"</li>
+                        <li>Your store is live at <code>/store</code> -- share this link</li>
+                    </ul>
+                    <a href="/products/admin/products" class="step-action">Go to Digital Products</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 7: EMAIL -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>7. Email Marketing</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','email') }">
+                <div class="step-header" @click="toggleExpand('use-email')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','email') }" @click.stop="toggle('use','email')">
+                        <svg x-show="checked('use','email')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Set up your first email template</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-email' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-email'" x-transition>
+                    <p>Email templates are reusable messages that get sent automatically (lead magnet delivery, purchase confirmations) or manually as campaigns.</p>
+                    <ul class="step-substeps">
+                        <li>Go to <strong>Email</strong> in the sidebar</li>
+                        <li>Two demo templates are pre-loaded (Lead Magnet Delivery, Purchase Confirmation)</li>
+                        <li>Edit them with your branding, or create new templates</li>
+                        <li>Use variables like <code>{% raw %}{{name}}{% endraw %}</code> and <code>{% raw %}{{product_name}}{% endraw %}</code> for personalization</li>
+                    </ul>
+                    <a href="/email/admin/email-templates" class="step-action">Go to Email</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 8: GO LIVE -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>8. Go Live</h2>
+                <span class="section-badge" style="background: rgba(16,185,129,0.12); color: #10b981;">Final Step</span>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('use','deploy') }">
+                <div class="step-header" @click="toggleExpand('use-deploy')">
+                    <div class="step-checkbox" :class="{ checked: checked('use','deploy') }" @click.stop="toggle('use','deploy')">
+                        <svg x-show="checked('use','deploy')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Deploy to Railway and connect your domain</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'use-deploy' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'use-deploy'" x-transition>
+                    <p>Railway hosts your app on the internet with a real URL. It costs about $5-10/month and takes 5 minutes to set up.</p>
+                    <ul class="step-substeps">
+                        <li>Sign up at <strong>railway.app</strong> (free to start)</li>
+                        <li>Create a new project and add a <strong>PostgreSQL</strong> database plugin</li>
+                        <li>Deploy from your GitHub repo or upload your project</li>
+                        <li>Copy all your .env variables into Railway's environment settings</li>
+                        <li>Railway gives you a URL like <code>yourapp.up.railway.app</code></li>
+                        <li>To use your own domain: Settings > Networking > Custom Domain, then add the CNAME to your DNS</li>
+                    </ul>
+                    <div class="guide-callout">
+                        <strong>Tip:</strong> You can run locally on SQLite for testing. When you deploy to Railway, it automatically switches to PostgreSQL. Your data starts fresh on production -- the app auto-seeds demo data on first run.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Overview (collapsed reference) -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>Feature Reference</h2>
+            </div>
+            <div style="font-size: 0.84rem; color: var(--text-tertiary); line-height: 1.6;">
+                <p><strong style="color: var(--text-secondary);">Dashboard</strong> -- Overview of contacts, deals, revenue, and activity. <strong style="color: var(--text-secondary);">Contacts</strong> -- Full CRM with statuses, notes, and history. <strong style="color: var(--text-secondary);">Deals</strong> -- Visual pipeline from lead to won. <strong style="color: var(--text-secondary);">Content Studio</strong> -- AI scripts, images, videos, captions. <strong style="color: var(--text-secondary);">Bookings</strong> -- Calendar scheduling. <strong style="color: var(--text-secondary);">Jackie AI</strong> -- Chat assistant for CRM actions. <strong style="color: var(--text-secondary);">Email</strong> -- Templates and campaigns. <strong style="color: var(--text-secondary);">Store</strong> -- Digital product sales with Stripe.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         TAB 2: RESELLER — SELL THIS AS A BUSINESS
+    ================================================================= -->
+    <div x-show="tab === 'sell'" x-transition.opacity style="display: none;">
+
+        <!-- Progress -->
+        <div class="progress-label">
+            <span>Your Reseller Progress</span>
+            <span x-text="sellCompleted + ' of ' + sellTotal + ' steps'"></span>
+        </div>
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" :style="'width:' + (sellTotal ? Math.round(sellCompleted/sellTotal*100) : 0) + '%'"></div>
+        </div>
+
+        <!-- SECTION 1: THE BUSINESS MODEL -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>1. Understand the Business Model</h2>
+                <span class="section-badge" style="background: rgba(199,163,90,0.12); color: var(--gold);">Read First</span>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','model') }">
+                <div class="step-header" @click="toggleExpand('sell-model')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','model') }" @click.stop="toggle('sell','model')">
+                        <svg x-show="checked('sell','model')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Read: How the reseller model works</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-model' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-model'" x-transition>
+                    <div class="guide-callout">
+                        <strong>You are the agency.</strong> You deploy and manage this app for clients on YOUR Railway account. The client pays you a monthly subscription. They log in and use their CRM, content tools, and storefront. They never see the code or touch the server.
+                    </div>
+                    <p><strong style="color: var(--text-primary);">Your cost per client:</strong> ~$5-10/month (Railway hosting). <strong style="color: var(--text-primary);">What you charge:</strong> $200-$500/month. That's 95%+ margin on recurring revenue.</p>
+                    <p>This is the same model as Go High Level -- but you own the platform and keep 100% of the revenue. No middleman, no per-seat fees, no revenue share.</p>
+                    <p><strong style="color: var(--text-primary);">How you customize it:</strong> Pick an industry (gyms, dentists, real estate, coaches, restaurants). Customize the landing page, branding, and onboarding survey for that niche. Now you have a specialized product you can sell to every business in that category.</p>
+
+                    <div class="rev-grid" style="margin-top: 0.75rem;">
+                        <div class="rev-item">
+                            <div class="rev-label">5 Clients</div>
+                            <div class="rev-amount">$1,500/mo</div>
+                            <div class="rev-sub">$18K/yr recurring</div>
+                        </div>
+                        <div class="rev-item">
+                            <div class="rev-label">10 Clients</div>
+                            <div class="rev-amount">$3,000/mo</div>
+                            <div class="rev-sub">$36K/yr recurring</div>
+                        </div>
+                        <div class="rev-item">
+                            <div class="rev-label">20 Clients</div>
+                            <div class="rev-amount">$6,000/mo</div>
+                            <div class="rev-sub">$72K/yr recurring</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.78rem; color: var(--text-tertiary); text-align: center; margin-top: 0.25rem;">Based on avg. $300/mo. Setup fees ($2K-$8.5K each) are on top.</p>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','pricing') }">
+                <div class="step-header" @click="toggleExpand('sell-pricing')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','pricing') }" @click.stop="toggle('sell','pricing')">
+                        <svg x-show="checked('sell','pricing')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Choose your pricing packages</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-pricing' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-pricing'" x-transition>
+                    <p>Here are suggested prices. Adjust based on your market. Some resellers charge more and include hands-on content management.</p>
+                    <div class="pkg-grid">
+                        <div class="pkg-card">
+                            <div class="pkg-tier">Single Component</div>
+                            <div class="pkg-price">$2,000 <span>+ $97/mo</span></div>
+                            <ul class="pkg-list">
+                                <li>Website OR CRM OR Content</li>
+                                <li>Custom branding & domain</li>
+                                <li>Training call</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-card">
+                            <div class="pkg-tier">Starter</div>
+                            <div class="pkg-price">$3,500 <span>+ $197/mo</span></div>
+                            <ul class="pkg-list">
+                                <li>Website + CRM + Bookings</li>
+                                <li>Digital product store</li>
+                                <li>Email support</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-card featured">
+                            <div class="pkg-tier">Professional</div>
+                            <div class="pkg-price">$5,000 <span>+ $300/mo</span></div>
+                            <ul class="pkg-list">
+                                <li>Everything in Starter</li>
+                                <li>Content automation</li>
+                                <li>Email marketing + AI</li>
+                                <li>Monthly strategy call</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-card">
+                            <div class="pkg-tier">Enterprise</div>
+                            <div class="pkg-price">$8,500 <span>+ $500/mo</span></div>
+                            <ul class="pkg-list">
+                                <li>Everything + managed content</li>
+                                <li>Ad campaigns</li>
+                                <li>Custom dev hours</li>
+                                <li>Dedicated account mgr</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="guide-callout" style="margin-top: 0.5rem;">
+                        <strong>Feature toggles = pricing tiers.</strong> Set <code>FEATURE_*=false</code> to hide what they didn't pay for. When they upgrade, flip the switch and charge more. No code changes needed.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: SET UP YOUR DEMO -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>2. Set Up Your Demo</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','demo') }">
+                <div class="step-header" @click="toggleExpand('sell-demo')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','demo') }" @click.stop="toggle('sell','demo')">
+                        <svg x-show="checked('sell','demo')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Deploy a live demo app you can show prospects</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-demo' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-demo'" x-transition>
+                    <p>You need a live, working demo to show prospects. Deploy one on Railway with your branding -- this is your sales tool.</p>
+                    <ul class="step-substeps">
+                        <li>Deploy the app to Railway (see the Business Owner "Go Live" steps)</li>
+                        <li>Customize it for your target industry (e.g., "Peak Fitness CRM")</li>
+                        <li>The demo auto-seeds with realistic data so it looks like an active business</li>
+                        <li>Practice navigating the dashboard, creating content, and using Jackie AI so you can demo confidently</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: FIND CLIENTS -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>3. Find Your First Clients</h2>
+                <span class="section-badge" style="background: rgba(16,185,129,0.12); color: #10b981;">Revenue Starts Here</span>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','network') }">
+                <div class="step-header" @click="toggleExpand('sell-network')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','network') }" @click.stop="toggle('sell','network')">
+                        <svg x-show="checked('sell','network')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Tap your personal network first</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-network' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-network'" x-transition>
+                    <p>Your first clients are people you already know. Don't cold-call strangers yet -- start warm.</p>
+                    <ul class="step-substeps">
+                        <li><strong>Make a list of 20 people</strong> you know who own or manage a small business -- gym owners, dentists, real estate agents, coaches, restaurant owners, contractors, salon owners</li>
+                        <li><strong>Send a simple message:</strong> "Hey [name], I just launched a business automation system for [industry]. It handles your website, CRM, bookings, and content -- all in one place. Can I show you a quick demo? It's pretty cool."</li>
+                        <li><strong>Offer a "friends and family" deal</strong> for your first 3 clients -- reduced setup fee to build your portfolio and get testimonials</li>
+                        <li><strong>Ask for referrals:</strong> Even if they don't need it, they know someone who does. "Do you know any business owners who need help with their online presence?"</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','pitch') }">
+                <div class="step-header" @click="toggleExpand('sell-pitch')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','pitch') }" @click.stop="toggle('sell','pitch')">
+                        <svg x-show="checked('sell','pitch')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Position yourself as a business automation expert</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-pitch' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-pitch'" x-transition>
+                    <p>You're not selling "software." You're selling time savings, more clients, and less stress. Position yourself as the person who automates their business.</p>
+                    <ul class="step-substeps">
+                        <li><strong>Your title:</strong> "I help small businesses automate their marketing, client management, and online presence." Put this in your social media bios, LinkedIn, business cards.</li>
+                        <li><strong>Your pitch website:</strong> Use your demo app's landing page as your pitch site. Customize it for the industry you're targeting. Share the URL in conversations.</li>
+                        <li><strong>Walk into local businesses:</strong> Bring your laptop. "I built this system for [gyms/dentists/etc]. Let me show you what it does." A live demo in person closes faster than any email.</li>
+                        <li><strong>Post on social media:</strong> Share screenshots of the dashboard, content pipeline, and booking calendar. "Built this for a client today. Their CRM, website, and content -- all automated."</li>
+                        <li><strong>Join local business groups:</strong> BNI, Chamber of Commerce, Facebook groups for local business owners. Be the "tech person" who helps businesses get online.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','script') }">
+                <div class="step-header" @click="toggleExpand('sell-script')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','script') }" @click.stop="toggle('sell','script')">
+                        <svg x-show="checked('sell','script')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Learn the sales script</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-script' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-script'" x-transition>
+                    <p>Follow this flow on every sales call or in-person demo:</p>
+                    <ul class="step-substeps">
+                        <li><strong>Open with the problem:</strong> "Most small businesses juggle 5-10 tools for their website, CRM, email, content, and payments. That costs time and money. GHL alone is $97-$497/mo and you still have to set it up."</li>
+                        <li><strong>Show the solution:</strong> Demo the dashboard live. Contacts, deals, content creation, and store -- all in one place. Show the landing page, booking calendar, storefront.</li>
+                        <li><strong>The wow moment:</strong> Open Content > Create, type an idea, and generate a full post with script, image, and captions in under 60 seconds. Then show Jackie AI adding a contact with natural language.</li>
+                        <li><strong>Talk ROI:</strong> "One new client per month from better content and follow-up pays for the entire system. You're already spending this on tools that don't talk to each other."</li>
+                        <li><strong>Handle the comparison:</strong> "Unlike GHL or HubSpot, this is YOUR system. No per-contact fees, no usage caps, no surprise charges. Flat monthly rate."</li>
+                        <li><strong>Close:</strong> "Let's get your onboarding survey filled out today. I can have your system live within 48 hours."</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: SIGN & ONBOARD -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>4. Sign & Onboard a Client</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','collect') }">
+                <div class="step-header" @click="toggleExpand('sell-collect')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','collect') }" @click.stop="toggle('sell','collect')">
+                        <svg x-show="checked('sell','collect')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Collect client info and payment</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-collect' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-collect'" x-transition>
+                    <p>Before you build anything, collect everything you need. Missing items delay the launch.</p>
+                    <ul class="step-substeps">
+                        <li><strong>Signed agreement</strong> -- Setup fee, monthly rate, scope, cancellation terms. Protect yourself.</li>
+                        <li><strong>Payment</strong> -- Collect setup fee + first month. Stripe, Venmo, wire -- whatever works.</li>
+                        <li><strong>Onboarding survey</strong> -- Send them to <code>/onboarding/survey</code> on your demo app. Collects business name, industry, challenges.</li>
+                        <li><strong>Business name, logo, brand colors</strong> -- PNG/SVG logo, hex codes, brand guidelines.</li>
+                        <li><strong>Domain name</strong> -- Purchase or transfer. Recommend Cloudflare Registrar.</li>
+                        <li><strong>Social media logins</strong> -- Admin access to Facebook, Instagram, TikTok, LinkedIn.</li>
+                        <li><strong>Stripe account</strong> -- Create under client's business for their payments.</li>
+                        <li><strong>Existing contact list</strong> -- CSV of their current clients/leads to import.</li>
+                        <li><strong>Photos & content</strong> -- Headshots, product photos, testimonials, marketing copy.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: DEPLOY CLIENT APP -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>5. Deploy the Client's App</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','deploy-client') }">
+                <div class="step-header" @click="toggleExpand('sell-deploy')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','deploy-client') }" @click.stop="toggle('sell','deploy-client')">
+                        <svg x-show="checked('sell','deploy-client')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Deploy on Railway (your account, their app)</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-deploy' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-deploy'" x-transition>
+                    <p>The client's app runs on YOUR Railway account. They never need a Railway login. You control the server, they pay you monthly.</p>
+                    <ul class="step-substeps">
+                        <li>Log into railway.app. Create a <strong>new project</strong> named after the client (e.g., "Peak Fitness Gym").</li>
+                        <li>Add a <strong>PostgreSQL database</strong> plugin. Railway provisions it automatically.</li>
+                        <li><strong>Deploy the app</strong> from your GitHub repo or upload a fresh zip.</li>
+                        <li>Railway generates a URL like <code>client-name.up.railway.app</code>.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','envvars') }">
+                <div class="step-header" @click="toggleExpand('sell-envvars')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','envvars') }" @click.stop="toggle('sell','envvars')">
+                        <svg x-show="checked('sell','envvars')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Configure environment variables</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-envvars' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-envvars'" x-transition>
+                    <p>In Railway dashboard > client's service > Variables. DATABASE_URL is auto-set by the PostgreSQL plugin.</p>
+                    <div class="guide-code">
+                        <span class="hl"># Required</span><br>
+                        ADMIN_USER=<span class="val">clientlogin</span><br>
+                        ADMIN_PASS=<span class="val">strong-unique-password</span><br>
+                        SECRET_KEY=<span class="val">(generate: python -c "import secrets; print(secrets.token_hex(32))")</span><br>
+                        BUSINESS_NAME=<span class="val">Peak Fitness Gym</span><br><br>
+                        <span class="hl"># Feature toggles (disable what they didn't pay for)</span><br>
+                        FEATURE_PRODUCTS=<span class="val">true</span><br>
+                        FEATURE_EMAIL=<span class="val">true</span><br>
+                        FEATURE_BOOKINGS=<span class="val">true</span><br><br>
+                        <span class="hl"># AI (use YOUR keys)</span><br>
+                        OPENAI_API_KEY=<span class="val">sk-...</span><br>
+                        CHAT_PROVIDER=<span class="val">openai</span><br><br>
+                        <span class="hl"># Client's Stripe</span><br>
+                        STRIPE_SECRET_KEY=<span class="val">sk_live_...</span><br>
+                        STRIPE_PUBLISHABLE_KEY=<span class="val">pk_live_...</span><br><br>
+                        <span class="hl"># Email</span><br>
+                        RESEND_API_KEY=<span class="val">re_...</span><br>
+                        RESEND_FROM_EMAIL=<span class="val">hello@clientdomain.com</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','domain') }">
+                <div class="step-header" @click="toggleExpand('sell-domain')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','domain') }" @click.stop="toggle('sell','domain')">
+                        <svg x-show="checked('sell','domain')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Connect their custom domain</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-domain' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-domain'" x-transition>
+                    <ul class="step-substeps">
+                        <li>Railway > service > Settings > Networking > Custom Domain. Add their domain.</li>
+                        <li>Railway gives you a CNAME record. Add it to the client's DNS provider.</li>
+                        <li>SSL is automatic. Wait 5-15 min for DNS propagation.</li>
+                        <li>Test login at <code>app.clientdomain.com/admin</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','customize') }">
+                <div class="step-header" @click="toggleExpand('sell-customize')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','customize') }" @click.stop="toggle('sell','customize')">
+                        <svg x-show="checked('sell','customize')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Customize branding and seed data</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-customize' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-customize'" x-transition>
+                    <ul class="step-substeps">
+                        <li>App auto-seeds demo data on first deploy so it looks active immediately</li>
+                        <li>Update BUSINESS_NAME in env vars, swap landing page copy for their business</li>
+                        <li>Upload their headshot in Settings for AI-generated content</li>
+                        <li>Import their existing contacts, clean out demo data when ready</li>
+                        <li>Configure booking calendar and onboarding survey for their industry</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 6: HANDOFF & BILLING -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>6. Hand Off & Start Billing</h2>
+                <span class="section-badge" style="background: rgba(16,185,129,0.12); color: #10b981;">Get Paid</span>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','train') }">
+                <div class="step-header" @click="toggleExpand('sell-train')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','train') }" @click.stop="toggle('sell','train')">
+                        <svg x-show="checked('sell','train')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Train the client (30-min call)</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-train' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-train'" x-transition>
+                    <ul class="step-substeps">
+                        <li>Walk them through: logging in, adding contacts, creating deals, using content pipeline, checking bookings</li>
+                        <li>Send login credentials via secure method (1Password, not text/email)</li>
+                        <li>Show them this Help section so they can self-serve</li>
+                        <li>Set a 1-week follow-up check-in to answer questions</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','billing') }">
+                <div class="step-header" @click="toggleExpand('sell-billing')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','billing') }" @click.stop="toggle('sell','billing')">
+                        <svg x-show="checked('sell','billing')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Set up recurring billing</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-billing' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-billing'" x-transition>
+                    <ul class="step-substeps">
+                        <li>Create a Stripe subscription for the monthly fee, or use Stripe Invoicing / QuickBooks</li>
+                        <li>The client pays YOU. You pay Railway ~$5-10/mo. The rest is recurring revenue.</li>
+                        <li>Set calendar reminders to check payment status monthly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 7: MANAGE & GROW -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>7. Manage & Grow Your Portfolio</h2>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','manage') }">
+                <div class="step-header" @click="toggleExpand('sell-manage')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','manage') }" @click.stop="toggle('sell','manage')">
+                        <svg x-show="checked('sell','manage')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Establish your monthly and quarterly routines</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-manage' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-manage'" x-transition>
+                    <p><strong style="color: var(--text-primary);">Monthly:</strong></p>
+                    <ul class="step-substeps">
+                        <li>Check Railway dashboard -- all client apps healthy</li>
+                        <li>Review client usage and engagement</li>
+                        <li>Send monthly recap email with key metrics</li>
+                        <li>Verify all subscriptions are active / collect payment</li>
+                    </ul>
+                    <p style="margin-top: 0.5rem;"><strong style="color: var(--text-primary);">Quarterly:</strong></p>
+                    <ul class="step-substeps">
+                        <li>Strategy call with each client (upsell opportunity)</li>
+                        <li>Update app to latest version across all deployments</li>
+                        <li>Review content pipeline performance</li>
+                        <li>Propose feature upgrades or add-on services</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-item" :class="{ completed: checked('sell','upsell') }">
+                <div class="step-header" @click="toggleExpand('sell-upsell')">
+                    <div class="step-checkbox" :class="{ checked: checked('sell','upsell') }" @click.stop="toggle('sell','upsell')">
+                        <svg x-show="checked('sell','upsell')" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <span class="step-title">Learn the upsell opportunities</span>
+                    <svg class="step-expand" :class="{ open: expanded === 'sell-upsell' }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="step-body" x-show="expanded === 'sell-upsell'" x-transition>
+                    <p>Every Starter client will eventually need more. Plant the seed during onboarding, then offer at quarterly reviews:</p>
+                    <ul class="step-substeps">
+                        <li><strong>Content management ($200-500/mo)</strong> -- Create and publish 10-20 posts/mo for them</li>
+                        <li><strong>Facebook/Instagram ads ($500-1,500/mo)</strong> -- Drive traffic to their landing page</li>
+                        <li><strong>SEO/AEO optimization ($300-800/mo)</strong> -- Google + AI search rankings</li>
+                        <li><strong>Email campaigns ($150-400/mo)</strong> -- Weekly newsletters and drip sequences</li>
+                        <li><strong>Feature upgrades ($500-2,000 one-time)</strong> -- Unlock new modules by flipping feature toggles</li>
+                        <li><strong>Custom development ($100-150/hr)</strong> -- Build it once, charge every client</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources -->
+        <div class="guide-section">
+            <div class="guide-section-header">
+                <h2>Resources</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <a href="https://simpletechskills.com/coaching" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; transition: border-color 0.2s;" onmouseover="this.style.borderColor='rgba(199,163,90,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(199,163,90,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">1-on-1 Coaching</div>
+                        <div style="font-size: 0.78rem; color: var(--text-tertiary);">Build your agency with direct support</div>
+                    </div>
+                </a>
+                <a href="https://simpletechskills.com/academy" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; transition: border-color 0.2s;" onmouseover="this.style.borderColor='rgba(199,163,90,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(199,163,90,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">Academy Community</div>
+                        <div style="font-size: 0.78rem; color: var(--text-tertiary);">Courses, templates, and community</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function guideApp() {
+    return {
+        tab: 'use',
+        expanded: null,
+        progress: {},
+
+        // Step keys for each tab
+        useSteps: ['login','bizname','headshot','openai','stripe','email-api','contact','deal','content','bookings','product','email','deploy'],
+        sellSteps: ['model','pricing','demo','network','pitch','script','collect','deploy-client','envvars','domain','customize','train','billing','manage','upsell'],
+
+        get useTotal() { return this.useSteps.length; },
+        get sellTotal() { return this.sellSteps.length; },
+        get useCompleted() { return this.useSteps.filter(s => this.progress['use:'+s]).length; },
+        get sellCompleted() { return this.sellSteps.filter(s => this.progress['sell:'+s]).length; },
+
+        checked(tab, key) { return !!this.progress[tab + ':' + key]; },
+
+        toggle(tab, key) {
+            var k = tab + ':' + key;
+            this.progress[k] = !this.progress[k];
+            this.saveProgress();
+        },
+
+        toggleExpand(id) {
+            this.expanded = this.expanded === id ? null : id;
+        },
+
+        loadProgress() {
+            try {
+                var saved = localStorage.getItem('guide-progress');
+                if (saved) this.progress = JSON.parse(saved);
+            } catch(e) { this.progress = {}; }
+        },
+
+        saveProgress() {
+            try {
+                localStorage.setItem('guide-progress', JSON.stringify(this.progress));
+            } catch(e) {}
+        }
+    };
+}
+</script>
+{% endblock %}

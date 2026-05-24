@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_name }} - Login{% endblock %}
+
+{% block body %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="brand-icon" style="width: 56px; height: 56px; margin: 0 auto 16px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">{{ business_name }}</h1>
+            <p style="color: var(--text-subtle); font-size: 0.875rem;">Sign in to your Command Center</p>
+        </div>
+
+        {% if default_creds %}
+        <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 10px 14px; margin-top: 20px; display: flex; align-items: flex-start; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+                <strong>Default credentials detected.</strong> Change <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">ADMIN_USER</code> and <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">ADMIN_PASS</code> in your .env file before going live.
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/admin/login" style="margin-top: 32px;">
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus
+                       placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" required
+                       placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 12px;">
+                Sign In
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 24px; color: var(--text-subtle); font-size: 0.75rem;">
+            Powered by Command Center CRM
+        </p>
+    </div>
+</div>
+{% endblock %}

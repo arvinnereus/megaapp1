@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_name }} - Transform Your Business{% endblock %}
+
+{% block body %}
+<div style="background: var(--bg-primary); min-height: 100vh;">
+    <!-- Nav -->
+    <nav style="padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="brand-icon" style="width: 36px; height: 36px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <span style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">{{ business_name }}</span>
+        </div>
+        <a href="/admin/login" class="btn btn-outline" style="font-size: 0.8rem;">Login</a>
+    </nav>
+
+    <!-- Hero -->
+    <section style="max-width: 780px; margin: 0 auto; text-align: center; padding: 80px 24px 60px;">
+        <div style="display: inline-block; background: var(--gold-tint); border: 1px solid rgba(199,163,90,0.2); border-radius: 20px; padding: 6px 16px; margin-bottom: 24px;">
+            <span style="color: var(--gold); font-size: 0.8rem; font-weight: 600;">LIMITED AVAILABILITY</span>
+        </div>
+        <h1 style="font-size: 3.2rem; font-weight: 700; color: var(--text-primary); line-height: 1.12; margin-bottom: 20px;">
+            The System That Turns<br><span style="color: var(--gold);">Leads Into Revenue</span>
+        </h1>
+        <p style="font-size: 1.2rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Stop leaving money on the table. Get the exact playbook, tools, and strategies top performers use to close more deals and scale faster.
+        </p>
+        <a href="{{ stripe_checkout_url or '#pricing' }}" class="btn btn-primary" style="padding: 16px 40px; font-size: 1.1rem; font-weight: 600;">
+            Get Started Now
+        </a>
+        <p style="color: var(--text-subtle); font-size: 0.8rem; margin-top: 14px;">30-day money-back guarantee. No risk.</p>
+
+        <!-- Hero Image -->
+        <div style="max-width: 960px; margin: 48px auto 0; padding: 0 24px;">
+            <img src="https://media.simpletechskills.com/page-images/sales-hero.png" alt="CRM Dashboard" style="width: 100%; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section style="max-width: 960px; margin: 0 auto; padding: 60px 24px;">
+        <h2 style="text-align: center; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Everything You Need to Win</h2>
+        <p style="text-align: center; color: var(--text-muted); font-size: 1.05rem; margin-bottom: 48px; max-width: 540px; margin-left: auto; margin-right: auto;">A complete system designed to eliminate guesswork and accelerate your growth.</p>
+        <div class="grid-3" style="gap: 24px;">
+            <div class="card" style="text-align: center; padding: 36px 24px;">
+                <img src="https://media.simpletechskills.com/page-images/sales-pipeline.png" alt="Pipeline Management" style="width: 100%; border-radius: 12px; margin-bottom: 16px; aspect-ratio: 1/1; object-fit: cover;">
+                <h3 style="color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">Pipeline Management</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6;">Visual deal tracking from first contact to closed-won. Never lose track of an opportunity again.</p>
+            </div>
+            <div class="card" style="text-align: center; padding: 36px 24px;">
+                <img src="https://media.simpletechskills.com/page-images/sales-followup.png" alt="Automated Follow-Up" style="width: 100%; border-radius: 12px; margin-bottom: 16px; aspect-ratio: 1/1; object-fit: cover;">
+                <h3 style="color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">Automated Follow-Up</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6;">Smart sequences that nurture leads while you focus on high-value activities.</p>
+            </div>
+            <div class="card" style="text-align: center; padding: 36px 24px;">
+                <img src="https://media.simpletechskills.com/page-images/sales-analytics.png" alt="Revenue Analytics" style="width: 100%; border-radius: 12px; margin-bottom: 16px; aspect-ratio: 1/1; object-fit: cover;">
+                <h3 style="color: var(--text-primary); font-weight: 600; margin-bottom: 8px;">Revenue Analytics</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6;">Real-time dashboards showing exactly where your revenue comes from and where to focus next.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section style="max-width: 960px; margin: 0 auto; padding: 60px 24px;">
+        <h2 style="text-align: center; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 48px;">What Our Clients Say</h2>
+        <div class="grid-3" style="gap: 24px;">
+            <div class="card" style="padding: 32px 24px;">
+                <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 20px; font-style: italic;">"Within 60 days, we doubled our close rate. The pipeline visibility alone was worth 10x the investment."</p>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: var(--gold-tint); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--gold); font-weight: 700; font-size: 0.9rem;">MG</div>
+                    <div>
+                        <p style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">Maria Garcia</p>
+                        <p style="color: var(--text-subtle); font-size: 0.8rem;">Garcia Properties</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="padding: 32px 24px;">
+                <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 20px; font-style: italic;">"I was drowning in spreadsheets. Now I have a clear view of every deal and my team is finally aligned on priorities."</p>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: rgba(34,197,94,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--success); font-weight: 700; font-size: 0.9rem;">DK</div>
+                    <div>
+                        <p style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">David Kim</p>
+                        <p style="color: var(--text-subtle); font-size: 0.8rem;">Kim Investment Group</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="padding: 32px 24px;">
+                <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 20px; font-style: italic;">"The automated follow-up sequences alone saved me 15 hours a week. My pipeline has never been healthier."</p>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: rgba(245,158,11,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--warning); font-weight: 700; font-size: 0.9rem;">SC</div>
+                    <div>
+                        <p style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">Sarah Chen</p>
+                        <p style="color: var(--text-subtle); font-size: 0.8rem;">Chen & Associates</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" style="max-width: 560px; margin: 0 auto; padding: 60px 24px;">
+        <h2 style="text-align: center; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Simple, Transparent Pricing</h2>
+        <p style="text-align: center; color: var(--text-muted); font-size: 1.05rem; margin-bottom: 40px;">One investment. Lifetime results.</p>
+        <div class="card" style="border: 1px solid var(--border-gold); padding: 48px 36px; text-align: center; box-shadow: var(--shadow-gold);">
+            <div style="display: inline-block; background: var(--gold-tint); border: 1px solid rgba(199,163,90,0.2); border-radius: 20px; padding: 6px 16px; margin-bottom: 20px;">
+                <span style="color: var(--gold); font-size: 0.8rem; font-weight: 600;">MOST POPULAR</span>
+            </div>
+            <h3 style="color: var(--text-primary); font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">Growth Accelerator</h3>
+            <div style="margin-bottom: 24px;">
+                <span style="font-size: 3rem; font-weight: 700; color: var(--text-primary);">$497</span>
+                <span style="color: var(--text-subtle); font-size: 0.95rem; margin-left: 4px;">one-time</span>
+            </div>
+            <ul style="list-style: none; padding: 0; margin: 0 0 32px; text-align: left;">
+                <li style="color: var(--text-muted); padding: 10px 0; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Complete pipeline management system
+                </li>
+                <li style="color: var(--text-muted); padding: 10px 0; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Automated follow-up sequences
+                </li>
+                <li style="color: var(--text-muted); padding: 10px 0; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Revenue analytics dashboard
+                </li>
+                <li style="color: var(--text-muted); padding: 10px 0; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Lead capture landing pages
+                </li>
+                <li style="color: var(--text-muted); padding: 10px 0; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Email integration & templates
+                </li>
+                <li style="color: var(--text-muted); padding: 10px 0; display: flex; align-items: center; gap: 12px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Priority support & updates
+                </li>
+            </ul>
+            <a href="{{ stripe_checkout_url or '#' }}" class="btn btn-primary" style="width: 100%; padding: 16px 24px; font-size: 1.1rem; font-weight: 600;">
+                Get Instant Access
+            </a>
+            <p style="color: var(--text-subtle); font-size: 0.8rem; margin-top: 14px;">30-day money-back guarantee</p>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section style="max-width: 680px; margin: 0 auto; padding: 60px 24px;" x-data="{ open: null }">
+        <h2 style="text-align: center; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 40px;">Frequently Asked Questions</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <button @click="open = open === 1 ? null : 1" style="width: 100%; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer;">
+                    <span style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; text-align: left;">How quickly will I see results?</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="2" :style="open === 1 ? 'transform: rotate(180deg)' : ''" style="transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div x-show="open === 1" x-collapse style="padding: 0 24px 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Most clients see measurable improvements within the first 2 weeks. Pipeline clarity comes immediately, and revenue impact typically shows within 30-60 days.</p>
+                </div>
+            </div>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <button @click="open = open === 2 ? null : 2" style="width: 100%; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer;">
+                    <span style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; text-align: left;">Is there a money-back guarantee?</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="2" :style="open === 2 ? 'transform: rotate(180deg)' : ''" style="transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div x-show="open === 2" x-collapse style="padding: 0 24px 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Absolutely. If you don't see value within 30 days, we'll refund 100% of your investment. No questions asked, no hoops to jump through.</p>
+                </div>
+            </div>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <button @click="open = open === 3 ? null : 3" style="width: 100%; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer;">
+                    <span style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; text-align: left;">Do I need technical experience?</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="2" :style="open === 3 ? 'transform: rotate(180deg)' : ''" style="transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div x-show="open === 3" x-collapse style="padding: 0 24px 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Not at all. Everything is designed to be intuitive and easy to use. If you can send an email, you can use this system. Plus, our support team is always available to help.</p>
+                </div>
+            </div>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <button @click="open = open === 4 ? null : 4" style="width: 100%; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer;">
+                    <span style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; text-align: left;">What kind of support is included?</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="2" :style="open === 4 ? 'transform: rotate(180deg)' : ''" style="transition: transform 0.2s; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div x-show="open === 4" x-collapse style="padding: 0 24px 20px;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">You get priority email support with a response within 24 hours. We also include onboarding guidance and regular product updates at no additional cost.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section style="max-width: 680px; margin: 0 auto; text-align: center; padding: 60px 24px 80px;">
+        <h2 style="font-size: 2.2rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; margin-bottom: 16px;">
+            Ready to Transform<br><span style="color: var(--gold);">Your Business?</span>
+        </h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.7; margin-bottom: 32px;">
+            Join hundreds of professionals who stopped guessing and started growing.
+        </p>
+        <a href="{{ stripe_checkout_url or '#pricing' }}" class="btn btn-primary" style="padding: 16px 40px; font-size: 1.1rem; font-weight: 600;">
+            Get Started Now
+        </a>
+    </section>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 40px 24px; border-top: 1px solid var(--border);">
+        <p style="color: var(--text-subtle); font-size: 0.8rem;">&copy; {{ business_name }} 2026. All rights reserved.</p>
+    </footer>
+</div>
+{% endblock %}

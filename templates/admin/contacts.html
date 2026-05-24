@@ -1,0 +1,277 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Contacts{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Manage your contacts, leads, and customers.</p>{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary" @click="showAddModal = true"
+    x-data="{ showAddModal: false }"
+    @keydown.escape.window="showAddModal = false">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add Contact
+</button>
+{% endblock %}
+
+{% block content %}
+<div x-data="contactsPage()">
+    <!-- Toolbar: Search + Filter -->
+    <div class="flex items-center gap-4" style="margin-bottom: 24px; flex-wrap: wrap;">
+        <form method="GET" action="/admin/contacts" class="search-bar" style="flex: 1; min-width: 200px;">
+            <span class="search-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="search" name="q" placeholder="Search contacts..." value="{{ q or '' }}" autocomplete="off">
+            {% if q %}
+            <a href="/admin/contacts" class="search-clear" title="Clear search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </a>
+            {% endif %}
+        </form>
+
+        <div class="flex items-center gap-3">
+            <a href="/admin/contacts" class="btn btn-sm {% if not status_filter %}btn-secondary{% else %}btn-outline{% endif %}">All</a>
+            <a href="/admin/contacts?status=Lead" class="btn btn-sm {% if status_filter == 'Lead' %}btn-secondary{% else %}btn-outline{% endif %}">Leads</a>
+            <a href="/admin/contacts?status=Customer" class="btn btn-sm {% if status_filter == 'Customer' %}btn-secondary{% else %}btn-outline{% endif %}">Customers</a>
+            <a href="/admin/contacts?status=VIP" class="btn btn-sm {% if status_filter == 'VIP' %}btn-secondary{% else %}btn-outline{% endif %}">VIP</a>
+            <a href="/admin/contacts?status=Inactive" class="btn btn-sm {% if status_filter == 'Inactive' %}btn-secondary{% else %}btn-outline{% endif %}">Inactive</a>
+        </div>
+
+        <button class="btn btn-primary" @click="showAddModal = true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Contact
+        </button>
+    </div>
+
+    {% if contacts %}
+    <!-- Desktop Table -->
+    <div class="table-wrapper" style="display: block;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Company</th>
+                    <th>Status</th>
+                    <th>Lead Source</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr style="cursor: pointer;" onclick="window.location='/admin/contacts/{{ contact.id }}'">
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="avatar avatar-sm">{{ contact.name[0].upper() if contact.name else '?' }}</div>
+                            <span>{{ contact.name }}</span>
+                        </div>
+                    </td>
+                    <td>{{ contact.email or '--' }}</td>
+                    <td>{{ contact.company or '--' }}</td>
+                    <td>
+                        {% if contact.status == 'Lead' %}
+                            <span class="badge badge-lead">Lead</span>
+                        {% elif contact.status == 'Customer' %}
+                            <span class="badge badge-customer">Customer</span>
+                        {% elif contact.status == 'VIP' %}
+                            <span class="badge badge-vip">VIP</span>
+                        {% elif contact.status == 'Inactive' %}
+                            <span class="badge badge-inactive">Inactive</span>
+                        {% else %}
+                            <span class="badge badge-lead">{{ contact.status or 'Lead' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ contact.lead_source or '--' }}</td>
+                    <td style="color: var(--text-subtle); font-size: 0.8125rem;">
+                        {{ contact.created_at.strftime('%b %d, %Y') if contact.created_at else '--' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Cards (hidden on desktop) -->
+    <div class="mobile-contact-cards" style="display: none;">
+        {% for contact in contacts %}
+        <a href="/admin/contacts/{{ contact.id }}" class="card" style="display: block; margin-bottom: 12px; text-decoration: none;">
+            <div class="flex items-center gap-3" style="margin-bottom: 12px;">
+                <div class="avatar">{{ contact.name[0].upper() if contact.name else '?' }}</div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ contact.name }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-subtle);">{{ contact.email or 'No email' }}</div>
+                </div>
+                {% if contact.status == 'Lead' %}
+                    <span class="badge badge-lead">Lead</span>
+                {% elif contact.status == 'Customer' %}
+                    <span class="badge badge-customer">Customer</span>
+                {% elif contact.status == 'VIP' %}
+                    <span class="badge badge-vip">VIP</span>
+                {% elif contact.status == 'Inactive' %}
+                    <span class="badge badge-inactive">Inactive</span>
+                {% else %}
+                    <span class="badge badge-lead">{{ contact.status or 'Lead' }}</span>
+                {% endif %}
+            </div>
+            <div class="flex justify-between" style="font-size: 0.8125rem; color: var(--text-muted);">
+                <span>{{ contact.company or 'No company' }}</span>
+                <span>{{ contact.created_at.strftime('%b %d, %Y') if contact.created_at else '' }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h3 class="empty-state-heading">No contacts found</h3>
+            <p class="empty-state-description">
+                {% if q %}
+                    No contacts match "{{ q }}". Try a different search term.
+                {% elif status_filter %}
+                    No contacts with status "{{ status_filter }}".
+                {% else %}
+                    Get started by adding your first contact.
+                {% endif %}
+            </p>
+            {% if not q and not status_filter %}
+            <button class="btn btn-primary" @click="showAddModal = true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Your First Contact
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Add Contact Modal -->
+    <div class="modal-overlay" x-show="showAddModal" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click.self="showAddModal = false"
+         @keydown.escape.window="showAddModal = false">
+        <div class="modal" @click.stop>
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Contact</h3>
+                <button class="modal-close" @click="showAddModal = false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form @submit.prevent="submitContact()">
+                    <div class="form-group">
+                        <label class="form-label">Name <span class="required">*</span></label>
+                        <input type="text" x-model="newContact.name" placeholder="Full name" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" x-model="newContact.email" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" x-model="newContact.phone" placeholder="(555) 123-4567">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Company</label>
+                        <input type="text" x-model="newContact.company" placeholder="Company name">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select x-model="newContact.status">
+                                <option value="Lead">Lead</option>
+                                <option value="Customer">Customer</option>
+                                <option value="VIP">VIP</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lead Source</label>
+                            <select x-model="newContact.lead_source">
+                                <option value="">Select source...</option>
+                                <option value="Website">Website</option>
+                                <option value="Referral">Referral</option>
+                                <option value="Social Media">Social Media</option>
+                                <option value="Email Campaign">Email Campaign</option>
+                                <option value="Cold Outreach">Cold Outreach</option>
+                                <option value="Event">Event</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" style="padding: 16px 0 0; margin-top: 8px; border-top: 1px solid var(--border-light);">
+                        <button type="button" class="btn btn-outline" @click="showAddModal = false">Cancel</button>
+                        <button type="submit" class="btn btn-primary" :disabled="submitting">
+                            <span x-show="!submitting">Save Contact</span>
+                            <span x-show="submitting" class="flex items-center gap-2">
+                                <span class="spinner spinner-sm"></span> Saving...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .table-wrapper { display: none !important; }
+        .mobile-contact-cards { display: block !important; }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function contactsPage() {
+    return {
+        showAddModal: false,
+        submitting: false,
+        newContact: {
+            name: '',
+            email: '',
+            phone: '',
+            company: '',
+            status: 'Lead',
+            lead_source: ''
+        },
+        async submitContact() {
+            if (!this.newContact.name.trim()) return;
+            this.submitting = true;
+            try {
+                const resp = await fetch('/api/contacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.newContact)
+                });
+                if (resp.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || 'Failed to create contact');
+                    this.submitting = false;
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+                this.submitting = false;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

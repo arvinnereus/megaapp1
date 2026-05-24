@@ -1,0 +1,179 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Digital Products{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Manage your ebooks, courses, PDFs, and digital downloads.</p>{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary" @click="showModal = true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add Product
+</button>
+{% endblock %}
+
+{% block content %}
+<div x-data="productsPage()">
+
+    <!-- Filter Tabs -->
+    <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+        <a href="/products/admin/products" class="btn btn-sm {% if not status_filter %}btn-secondary{% else %}btn-outline{% endif %}">All ({{ products|length }})</a>
+        <a href="/products/admin/products?status=active" class="btn btn-sm {% if status_filter == 'active' %}btn-secondary{% else %}btn-outline{% endif %}">Active</a>
+        <a href="/products/admin/products?status=inactive" class="btn btn-sm {% if status_filter == 'inactive' %}btn-secondary{% else %}btn-outline{% endif %}">Archived</a>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card">
+        <div class="card-body" style="padding: 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding: 12px 16px; text-align: left; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">PRODUCT</th>
+                        <th style="padding: 12px 16px; text-align: left; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">PRICE</th>
+                        <th style="padding: 12px 16px; text-align: left; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">TYPE</th>
+                        <th style="padding: 12px 16px; text-align: left; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">STATUS</th>
+                        <th style="padding: 12px 16px; text-align: left; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">SHOW ON STORE</th>
+                        <th style="padding: 12px 16px; text-align: right; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;" onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 12px 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                {% if product.image_url %}
+                                <img src="{{ product.image_url }}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: var(--bg-secondary);">
+                                {% else %}
+                                <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--gold-tint); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <span style="font-weight: 500; color: var(--text-primary);">{{ product.name }}</span>
+                                    {% if product.description %}
+                                    <div style="font-size: 0.75rem; color: var(--text-subtle); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ product.description[:80] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            <span style="color: var(--gold); font-weight: 600;">
+                                {% if product.product_type == 'free' %}Free{% else %}${{ "{:,.2f}".format(product.price) }}{% endif %}
+                            </span>
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            <span class="badge" style="font-size: 0.7rem; {% if product.product_type == 'free' %}background: rgba(99,102,241,0.15); color: #6366f1;{% else %}background: var(--gold-tint); color: var(--gold);{% endif %}">{{ product.product_type|capitalize }}</span>
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if product.active %}
+                            <span class="badge" style="font-size: 0.7rem; background: rgba(34,197,94,0.15); color: var(--success);">Active</span>
+                            {% else %}
+                            <span class="badge" style="font-size: 0.7rem; background: var(--bg-secondary); color: var(--text-subtle);">Archived</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px;">
+                            {% if product.active %}
+                            <span style="color: var(--success);">Yes</span>
+                            {% else %}
+                            <span style="color: var(--text-subtle);">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px; text-align: right;">
+                            <a href="/products/admin/products/{{ product.id }}" class="btn btn-ghost btn-sm" style="font-size: 0.75rem;">View</a>
+                            <button class="btn btn-ghost btn-sm" style="font-size: 0.75rem; color: var(--danger);" @click="archiveProduct({{ product.id }}, {{ product.active|lower }})">
+                                {{ 'Archive' if product.active else 'Restore' }}
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not products %}
+                    <tr>
+                        <td colspan="6" style="padding: 48px 16px; text-align: center; color: var(--text-subtle);">
+                            No products yet. Click "Add Product" to create your first one.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal-overlay" x-show="showModal" x-cloak
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         @click.self="showModal = false" @keydown.escape.window="showModal = false">
+        <div class="modal" @click.stop>
+            <div class="modal-header">
+                <h3 class="modal-title">Add Product</h3>
+                <button class="modal-close" @click="showModal = false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form @submit.prevent="submitProduct()">
+                    <div class="form-group">
+                        <label class="form-label">Product Name <span style="color: var(--danger);">*</span></label>
+                        <input type="text" x-model="newProduct.name" placeholder="e.g. Business Blueprint" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea x-model="newProduct.description" rows="3" placeholder="What does the customer get?"></textarea>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label class="form-label">Price ($)</label>
+                            <input type="number" x-model="newProduct.price" placeholder="0" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select x-model="newProduct.product_type">
+                                <option value="paid">Paid</option>
+                                <option value="free">Free</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="padding: 16px 0 0; border-top: 1px solid var(--border-light);">
+                        <button type="button" class="btn btn-outline" @click="showModal = false">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function productsPage() {
+    return {
+        showModal: false,
+        newProduct: { name: '', description: '', price: '', product_type: 'paid' },
+
+        async submitProduct() {
+            if (!this.newProduct.name.trim()) return;
+            const resp = await fetch('/products/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: this.newProduct.name,
+                    description: this.newProduct.description,
+                    price: parseFloat(this.newProduct.price) || 0,
+                    product_type: this.newProduct.product_type,
+                }),
+            });
+            if (resp.ok) window.location.reload();
+            else alert('Failed to create product');
+        },
+
+        async archiveProduct(id, currentlyActive) {
+            const resp = await fetch('/products/api/products/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: !currentlyActive }),
+            });
+            if (resp.ok) window.location.reload();
+        },
+    };
+}
+</script>
+{% endblock %}

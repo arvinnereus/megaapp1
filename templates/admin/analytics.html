@@ -1,0 +1,278 @@
+{% extends "base_admin.html" %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Website traffic and visitor insights.</p>{% endblock %}
+
+{% block page_actions %}
+<div style="display: flex; align-items: center; gap: 8px;">
+    <button class="btn btn-ghost btn-sm" style="padding: 6px 8px; color: var(--text-subtle);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; min-width: 120px; text-align: center;">Last 24 hours</span>
+    <button class="btn btn-ghost btn-sm" style="padding: 6px 8px; color: var(--text-subtle);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Stats Row -->
+<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;">
+
+    <!-- Views -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Views</div>
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1;">{{ total_views }}</span>
+            <span style="font-size: 0.7rem; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 7px; border-radius: 10px;">+101.2%</span>
+        </div>
+    </div>
+
+    <!-- Visits -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Visits</div>
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1;">{{ total_visits }}</span>
+            <span style="font-size: 0.7rem; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 7px; border-radius: 10px;">+95.4%</span>
+        </div>
+    </div>
+
+    <!-- Visitors -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Visitors</div>
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1;">{{ total_visitors }}</span>
+            <span style="font-size: 0.7rem; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 7px; border-radius: 10px;">+88.7%</span>
+        </div>
+    </div>
+
+    <!-- Bounce Rate -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Bounce Rate</div>
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1;">{{ bounce_rate }}%</span>
+            <span style="font-size: 0.7rem; font-weight: 600; color: var(--danger); background: var(--danger-bg); padding: 2px 7px; border-radius: 10px;">+3.2%</span>
+        </div>
+    </div>
+
+    <!-- Avg Duration -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 18px 20px;">
+        <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Avg. Duration</div>
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1;">{{ avg_duration }}s</span>
+            <span style="font-size: 0.7rem; font-weight: 600; color: var(--success); background: var(--success-bg); padding: 2px 7px; border-radius: 10px;">+12.5%</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bar Chart -->
+<div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 0; margin-bottom: 24px; overflow: hidden;">
+    <div style="padding: 20px 24px 0 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 20px; font-size: 0.75rem;">
+            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-subtle);">
+                <span style="width: 10px; height: 10px; background: var(--gold); border-radius: 2px; display: inline-block;"></span>
+                Visitors
+            </span>
+            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-subtle);">
+                <span style="width: 10px; height: 10px; background: var(--gold-champagne); border-radius: 2px; display: inline-block;"></span>
+                Views
+            </span>
+        </div>
+    </div>
+    <div style="padding: 12px 16px 16px 16px;">
+        <canvas id="analyticsChart" style="width: 100%; height: 280px;"></canvas>
+    </div>
+</div>
+
+<!-- Two-Column: Pages + Referrers -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+
+    <!-- Pages -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light);">
+            <h3 style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem; margin: 0;">Pages</h3>
+        </div>
+        <div style="padding: 0;">
+            <!-- Table Header -->
+            <div style="display: flex; justify-content: space-between; padding: 10px 20px; font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">
+                <span>Page</span>
+                <span>Views</span>
+            </div>
+            {% for page in top_pages %}
+            <div style="position: relative; padding: 10px 20px; border-bottom: 1px solid var(--border-light);">
+                <!-- Percentage bar background -->
+                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{ page.pct }}%; background: var(--gold-tint); pointer-events: none;"></div>
+                <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.82rem; color: var(--text-primary); font-family: monospace;">{{ page.page }}</span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500; white-space: nowrap;">{{ page.views }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not top_pages %}
+            <div style="padding: 24px 20px; text-align: center; color: var(--text-subtle); font-size: 0.82rem;">No page data available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Referrers -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light);">
+            <h3 style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem; margin: 0;">Referrers</h3>
+        </div>
+        <div style="padding: 0;">
+            <!-- Table Header -->
+            <div style="display: flex; justify-content: space-between; padding: 10px 20px; font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light);">
+                <span>Source</span>
+                <span>Views</span>
+            </div>
+            {% for ref in referrers %}
+            <div style="position: relative; padding: 10px 20px; border-bottom: 1px solid var(--border-light);">
+                <!-- Percentage bar background -->
+                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{ ref.pct }}%; background: var(--gold-tint); pointer-events: none;"></div>
+                <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.82rem; color: var(--text-primary);">{{ ref.source }}</span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">{{ ref.views }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not referrers %}
+            <div style="padding: 24px 20px; text-align: center; color: var(--text-subtle); font-size: 0.82rem;">No referrer data available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+
+    const hoursData = {{ hours_data | tojson }};
+    const labels = hoursData.map(d => {
+        const h = d.hour;
+        if (h === 0) return '12 AM';
+        if (h === 12) return '12 PM';
+        return h < 12 ? h + ' AM' : (h - 12) + ' PM';
+    });
+    const visitors = hoursData.map(d => d.visitors);
+    const views = hoursData.map(d => d.views);
+
+    // Gold palette
+    const goldRGB = '199, 163, 90';
+    const champagneRGB = '228, 211, 162';
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Visitors',
+                    data: visitors,
+                    backgroundColor: 'rgba(' + goldRGB + ', 0.7)',
+                    borderColor: 'rgba(' + goldRGB + ', 1)',
+                    borderWidth: 0,
+                    borderRadius: 3,
+                    borderSkipped: false,
+                },
+                {
+                    label: 'Views',
+                    data: views,
+                    backgroundColor: 'rgba(' + champagneRGB + ', 0.45)',
+                    borderColor: 'rgba(' + champagneRGB + ', 0.8)',
+                    borderWidth: 0,
+                    borderRadius: 3,
+                    borderSkipped: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1E2025',
+                    titleColor: '#F5F0E8',
+                    bodyColor: '#C8C0B4',
+                    borderColor: '#31343C',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 10,
+                    titleFont: { size: 12, weight: '600' },
+                    bodyFont: { size: 11 },
+                    callbacks: {
+                        title: function(items) {
+                            return items[0].label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false,
+                    },
+                    ticks: {
+                        color: '#9E978C',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        callback: function(val, index) {
+                            // Show every 3rd label to avoid crowding
+                            return index % 3 === 0 ? this.getLabelForValue(val) : '';
+                        }
+                    },
+                    border: { display: false }
+                },
+                y: {
+                    stacked: true,
+                    grid: {
+                        color: 'rgba(49, 52, 60, 0.5)',
+                        drawTicks: false,
+                    },
+                    ticks: {
+                        color: '#9E978C',
+                        font: { size: 10 },
+                        padding: 8,
+                    },
+                    border: { display: false },
+                    beginAtZero: true,
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+    /* Responsive: stack KPIs and columns on smaller screens */
+    @media (max-width: 1100px) {
+        div[style*="grid-template-columns: repeat(5"] {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+    }
+    @media (max-width: 768px) {
+        div[style*="grid-template-columns: repeat(5"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+        div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+    @media (max-width: 480px) {
+        div[style*="grid-template-columns: repeat(5"],
+        div[style*="grid-template-columns: repeat(2"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+
+{% endblock %}

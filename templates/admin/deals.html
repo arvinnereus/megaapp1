@@ -1,0 +1,294 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Sales Pipeline{% endblock %}
+{% block page_subtitle %}<p class="page-subtitle">Pipeline total: ${{ "{:,.0f}".format(pipeline_total or 0) }}</p>{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary" @click="$dispatch('open-deal-modal')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Deal
+</button>
+{% endblock %}
+
+{% block content %}
+<div x-data="dealsPage()" @open-deal-modal.window="showNewDealModal = true">
+    <!-- Toolbar: Search + Stage Filters -->
+    <div class="flex items-center gap-4" style="margin-bottom: 24px; flex-wrap: wrap;">
+        <form method="GET" action="/admin/deals" class="search-bar" style="flex: 1; min-width: 200px;">
+            {% if stage_filter %}
+            <input type="hidden" name="stage" value="{{ stage_filter }}">
+            {% endif %}
+            <span class="search-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="search" name="q" placeholder="Search deals..." value="{{ search or '' }}" autocomplete="off">
+            {% if search %}
+            <a href="/admin/deals{% if stage_filter %}?stage={{ stage_filter }}{% endif %}" class="search-clear" title="Clear search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </a>
+            {% endif %}
+        </form>
+
+        <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+            <a href="/admin/deals{% if search %}?q={{ search }}{% endif %}" class="btn btn-sm {% if not stage_filter %}btn-secondary{% else %}btn-outline{% endif %}">All</a>
+            {% for s in stages %}
+            <a href="/admin/deals?stage={{ s }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-sm {% if stage_filter == s %}btn-secondary{% else %}btn-outline{% endif %}">
+                {{ s }}
+                {% if stage_counts.get(s) %}
+                <span style="opacity: 0.6; margin-left: 2px;">({{ stage_counts[s] }})</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if deals %}
+    <!-- Desktop Table -->
+    <div class="table-wrapper" style="display: block;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Deal Name</th>
+                    <th>Contact</th>
+                    <th>Value</th>
+                    <th>Stage</th>
+                    <th>Close Date</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deal in deals %}
+                <tr style="cursor: pointer;" onclick="javascript:void(0)">
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="avatar avatar-sm" style="
+                                {% if deal.stage == 'Won' %}background: rgba(34, 197, 94, 0.15); color: var(--success);
+                                {% elif deal.stage == 'Lost' %}background: rgba(239, 68, 68, 0.15); color: var(--danger);
+                                {% else %}background: var(--gold-tint); color: var(--gold);
+                                {% endif %}
+                            ">{{ deal.title[0].upper() if deal.title else '?' }}</div>
+                            <span style="font-weight: 500;">{{ deal.title }}</span>
+                        </div>
+                    </td>
+                    <td>{{ deal.contact.name if deal.contact else '--' }}</td>
+                    <td style="font-weight: 600; color: var(--gold);">${{ "{:,.0f}".format(deal.value) if deal.value else '0' }}</td>
+                    <td>
+                        {% if deal.stage == 'New Lead' %}
+                            <span class="badge" style="background: rgba(234, 179, 8, 0.12); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.25);">New Lead</span>
+                        {% elif deal.stage == 'Contacted' %}
+                            <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25);">Contacted</span>
+                        {% elif deal.stage == 'Proposal' %}
+                            <span class="badge" style="background: rgba(168, 85, 247, 0.12); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.25);">Proposal</span>
+                        {% elif deal.stage == 'Negotiation' %}
+                            <span class="badge" style="background: rgba(249, 115, 22, 0.12); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.25);">Negotiation</span>
+                        {% elif deal.stage == 'Won' %}
+                            <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25);">Won</span>
+                        {% elif deal.stage == 'Lost' %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">Lost</span>
+                        {% else %}
+                            <span class="badge" style="background: var(--gold-tint); color: var(--gold);">{{ deal.stage }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: var(--text-subtle); font-size: 0.8125rem;">
+                        {{ deal.expected_close_date.strftime('%b %d, %Y') if deal.expected_close_date else '--' }}
+                    </td>
+                    <td style="color: var(--text-subtle); font-size: 0.8125rem;">
+                        {{ deal.created_at.strftime('%b %d, %Y') if deal.created_at else '--' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Cards (hidden on desktop) -->
+    <div class="mobile-deal-cards" style="display: none;">
+        {% for deal in deals %}
+        <div class="card" style="display: block; margin-bottom: 12px;">
+            <div class="flex items-center gap-3" style="margin-bottom: 12px;">
+                <div class="avatar" style="
+                    {% if deal.stage == 'Won' %}background: rgba(34, 197, 94, 0.15); color: var(--success);
+                    {% elif deal.stage == 'Lost' %}background: rgba(239, 68, 68, 0.15); color: var(--danger);
+                    {% else %}background: var(--gold-tint); color: var(--gold);
+                    {% endif %}
+                ">{{ deal.title[0].upper() if deal.title else '?' }}</div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ deal.title }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-subtle);">{{ deal.contact.name if deal.contact else 'No contact' }}</div>
+                </div>
+                {% if deal.stage == 'New Lead' %}
+                    <span class="badge" style="background: rgba(234, 179, 8, 0.12); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.25);">New Lead</span>
+                {% elif deal.stage == 'Contacted' %}
+                    <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25);">Contacted</span>
+                {% elif deal.stage == 'Proposal' %}
+                    <span class="badge" style="background: rgba(168, 85, 247, 0.12); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.25);">Proposal</span>
+                {% elif deal.stage == 'Negotiation' %}
+                    <span class="badge" style="background: rgba(249, 115, 22, 0.12); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.25);">Negotiation</span>
+                {% elif deal.stage == 'Won' %}
+                    <span class="badge" style="background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25);">Won</span>
+                {% elif deal.stage == 'Lost' %}
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">Lost</span>
+                {% else %}
+                    <span class="badge" style="background: var(--gold-tint); color: var(--gold);">{{ deal.stage }}</span>
+                {% endif %}
+            </div>
+            <div class="flex justify-between" style="font-size: 0.8125rem; color: var(--text-muted);">
+                <span style="font-weight: 600; color: var(--gold);">${{ "{:,.0f}".format(deal.value) if deal.value else '0' }}</span>
+                <span>{{ deal.expected_close_date.strftime('%b %d, %Y') if deal.expected_close_date else 'No close date' }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            <h3 class="empty-state-heading">No deals found</h3>
+            <p class="empty-state-description">
+                {% if search %}
+                    No deals match "{{ search }}". Try a different search term.
+                {% elif stage_filter %}
+                    No deals in the "{{ stage_filter }}" stage.
+                {% else %}
+                    Get started by creating your first deal.
+                {% endif %}
+            </p>
+            {% if not search and not stage_filter %}
+            <button class="btn btn-primary" @click="showNewDealModal = true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Your First Deal
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- New Deal Modal -->
+    <div class="modal-overlay" x-show="showNewDealModal" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click.self="showNewDealModal = false"
+         @keydown.escape.window="showNewDealModal = false">
+        <div class="modal" @click.stop>
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Deal</h3>
+                <button class="modal-close" @click="showNewDealModal = false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form @submit.prevent="submitDeal()">
+                    <div class="form-group">
+                        <label class="form-label">Deal Title <span class="required">*</span></label>
+                        <input type="text" x-model="newDeal.title" placeholder="e.g. Website redesign project" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Contact</label>
+                        <select x-model="newDeal.contact_id">
+                            <option value="">Select a contact...</option>
+                            {% for c in contacts %}
+                            <option value="{{ c.id }}">{{ c.name }}{% if c.company %} - {{ c.company }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Value ($)</label>
+                            <input type="number" x-model="newDeal.value" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Stage</label>
+                            <select x-model="newDeal.stage">
+                                {% for stage in stages %}
+                                <option value="{{ stage }}">{{ stage }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Expected Close Date</label>
+                        <input type="date" x-model="newDeal.expected_close_date">
+                    </div>
+
+                    <div class="modal-footer" style="padding: 16px 0 0; margin-top: 8px; border-top: 1px solid var(--border-light);">
+                        <button type="button" class="btn btn-outline" @click="showNewDealModal = false">Cancel</button>
+                        <button type="submit" class="btn btn-primary" :disabled="submitting">
+                            <span x-show="!submitting">Create Deal</span>
+                            <span x-show="submitting" class="flex items-center gap-2">
+                                <span class="spinner spinner-sm"></span> Creating...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .table-wrapper { display: none !important; }
+        .mobile-deal-cards { display: block !important; }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function dealsPage() {
+    return {
+        showNewDealModal: false,
+        submitting: false,
+        newDeal: {
+            title: '',
+            contact_id: '',
+            value: '',
+            stage: '{{ stages[0] if stages else "New Lead" }}',
+            expected_close_date: ''
+        },
+
+        async submitDeal() {
+            if (!this.newDeal.title.trim()) return;
+            this.submitting = true;
+            try {
+                const payload = {
+                    title: this.newDeal.title,
+                    stage: this.newDeal.stage,
+                    value: this.newDeal.value ? parseFloat(this.newDeal.value) : 0
+                };
+                if (this.newDeal.contact_id) payload.contact_id = parseInt(this.newDeal.contact_id);
+                if (this.newDeal.expected_close_date) payload.expected_close_date = this.newDeal.expected_close_date;
+
+                const resp = await fetch('/api/deals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (resp.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || 'Failed to create deal');
+                    this.submitting = false;
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
+                this.submitting = false;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}
