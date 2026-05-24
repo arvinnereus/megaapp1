@@ -427,7 +427,8 @@ function jackieChat() {
                 const offer = await this._pc.createOffer();
                 await this._pc.setLocalDescription(offer);
 
-                const sdpResp = await fetch('https://api.openai.com/v1/realtime?model=' + encodeURIComponent(model), {
+                // GA endpoint for WebRTC SDP exchange (Beta /v1/realtime?model=... is gone).
+                const sdpResp = await fetch('https://api.openai.com/v1/realtime/calls?model=' + encodeURIComponent(model), {
                     method: 'POST',
                     body: offer.sdp,
                     headers: {
