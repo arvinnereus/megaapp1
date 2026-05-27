@@ -15,6 +15,7 @@ Cost:
 """
 
 import os
+import io
 import base64
 import time
 import re
@@ -111,5 +112,86 @@ def generate_image(prompt, emit_event=None, reference_image_url=None):
         "task_id": task_id,
         "duration": duration,
         "cost": 0.07,
+        "demo": False,
+    }
+
+
+def generate_image_with_references(prompt, references, emit_event=None):
+    """
+    Generate an image using OpenAI gpt-image-1's *edit* endpoint with one or more
+    reference images supplied as raw bytes. The model uses the input images as
+    visual context (e.g. a face to preserve, a style/scene reference).
+
+    Args:
+        prompt: textual description of the desired output
+        references: list of (bytes, filename) tuples. First entry is treated as
+                    the primary subject; any others as additional context.
+
+    Returns the same dict shape as generate_image().
+    """
+    emit = emit_event or (lambda *a, **kw: None)
+    prompt = _clean_prompt(prompt)
+    api_key = os.environ.get("OPENAI_API_KEY")
+
+    if not api_key:
+        return {
+            "image_url": "https://placehold.co/1024x1024/17181C/C7A35A?text=Add+OpenAI+Key+in+Settings",
+            "task_id": "demo_task",
+            "duration": 0,
+            "cost": 0.0,
+            "demo": True,
+        }
+
+    # Wrap bytes in file-like objects that the OpenAI SDK accepts.
+    files = []
+    for i, ref in enumerate(references or []):
+        data, name = ref if isinstance(ref, tuple) else (ref, f"ref{i}.png")
+        bio = io.BytesIO(data)
+        bio.name = name or f"ref{i}.png"
+        files.append(bio)
+
+    if not files:
+        raise ValueError("generate_image_with_references requires at least one reference image.")
+
+    emit("image", "progress",
+         f"Sending {len(files)} reference image(s) + prompt to OpenAI gpt-image-1 (edit endpoint).")
+
+    client = OpenAI(api_key=api_key)
+    start = time.time()
+
+    try:
+        response = client.images.edit(
+            model="gpt-image-1",
+            image=files if len(files) > 1 else files[0],
+            prompt=prompt,
+            size="1024x1024",
+            quality="medium",
+            n=1,
+        )
+    except Exception as e:
+        emit("image", "error", f"OpenAI edit failed: {type(e).__name__}: {e}")
+        raise
+
+    duration = round(time.time() - start, 1)
+    image_b64 = response.data[0].b64_json
+    image_bytes = base64.b64decode(image_b64)
+
+    emit("image", "progress",
+         f"OpenAI returned {len(image_bytes):,} bytes in {duration}s. Saving to R2…")
+
+    if r2_storage.is_configured():
+        up = r2_storage.upload_bytes(
+            image_bytes, content_type="image/png", folder="avatars", emit_event=emit_event)
+        image_url = up["url"]
+        task_id = up["key"]
+    else:
+        image_url = f"data:image/png;base64,{image_b64}"
+        task_id = f"openai_{int(time.time())}"
+
+    return {
+        "image_url": image_url,
+        "task_id": task_id,
+        "duration": duration,
+        "cost": 0.17,  # gpt-image-1 edit, medium quality, ~1024x1024
         "demo": False,
     }

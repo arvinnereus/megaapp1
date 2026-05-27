@@ -28,7 +28,7 @@ from models import ContentItem, PipelineLog, Setting
 from extensions import db
 from services.firecrawl import scrape_url
 from services.openrouter import generate_script, generate_image_prompt, generate_captions
-from services import openai_images, kie_ai
+from services import openai_images, kie_ai, gemini_images
 from services.kie_ai import generate_video, generate_video_with_reference
 
 
@@ -36,13 +36,16 @@ def generate_image(prompt, emit_event=None, reference_image_url=None):
     """
     Dispatch image generation to whichever provider IMAGE_PROVIDER points at.
 
-    IMAGE_PROVIDER=openai (default) → services.openai_images (gpt-image-1, uploads straight to R2)
-    IMAGE_PROVIDER=kie               → services.kie_ai      (Nano Banana Pro, returns Kie CDN URL)
+    IMAGE_PROVIDER=gemini (default) → services.gemini_images (Nano Banana, $0.04/img, R2 direct)
+    IMAGE_PROVIDER=openai           → services.openai_images (gpt-image-1, $0.07/img, R2 direct)
+    IMAGE_PROVIDER=kie              → services.kie_ai        (Nano Banana Pro, $0.09/img, Kie CDN)
     """
-    provider = os.environ.get("IMAGE_PROVIDER", "openai").strip().lower()
+    provider = os.environ.get("IMAGE_PROVIDER", "gemini").strip().lower()
     if provider == "kie":
         return kie_ai.generate_image(prompt, emit_event=emit_event, reference_image_url=reference_image_url)
-    return openai_images.generate_image(prompt, emit_event=emit_event, reference_image_url=reference_image_url)
+    if provider == "openai":
+        return openai_images.generate_image(prompt, emit_event=emit_event, reference_image_url=reference_image_url)
+    return gemini_images.generate_image(prompt, emit_event=emit_event, reference_image_url=reference_image_url)
 from services.getlate import publish_post
 from services.r2_storage import upload_image as r2_upload_image, upload_video as r2_upload_video, is_configured as r2_is_configured
 

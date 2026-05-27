@@ -75,6 +75,12 @@
                 <span x-show="sidebarOpen">Email</span>
             </a>
             {% endif %}
+            {% if features.avatar %}
+            <a href="/avatar/" class="sidebar-link {% if request.path.startswith('/avatar') %}active{% endif %}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span x-show="sidebarOpen">Avatar</span>
+            </a>
+            {% endif %}
 
             <!-- TOOLS -->
             <div class="sidebar-section">

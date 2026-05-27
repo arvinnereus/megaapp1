@@ -92,10 +92,19 @@ def generate_image(prompt, emit_event=None, reference_image_url=None):
             "demo": True
         }
 
+    # -- Normalise reference images (accept either a single URL string or a list) --
+    if isinstance(reference_image_url, str):
+        refs = [reference_image_url]
+    elif isinstance(reference_image_url, (list, tuple)):
+        refs = [u for u in reference_image_url if u]
+    else:
+        refs = []
+
     # -- Step 1: Create the task --
-    if reference_image_url:
-        emit("image", "progress", "Sending image description + headshot reference to Kie.ai. The AI will generate an image featuring the person from the headshot.")
-        prompt = f"This exact person from the reference photo, {prompt}"
+    if refs:
+        emit("image", "progress",
+             f"Sending image description + {len(refs)} reference image(s) to Kie.ai. The AI will generate an image guided by the references.")
+        prompt = f"This exact person from the reference photo(s), {prompt}"
     else:
         emit("image", "progress", "Sending the image description to Kie.ai. Unlike the text AI (which responds instantly), image AI takes time — so we create a 'task' and check back on it.")
 
@@ -105,8 +114,8 @@ def generate_image(prompt, emit_event=None, reference_image_url=None):
             "aspect_ratio": "9:16",
             "resolution": "1K"
         }
-        if reference_image_url:
-            input_payload["image_input"] = [reference_image_url]
+        if refs:
+            input_payload["image_input"] = refs
 
         create_response = requests.post(
             TASK_CREATE_URL,

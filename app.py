@@ -34,6 +34,7 @@ def create_app():
     app.config["FEATURE_EMAIL"]     = os.environ.get("FEATURE_EMAIL",     "true").lower() == "true"
     app.config["FEATURE_ANALYTICS"] = os.environ.get("FEATURE_ANALYTICS", "true").lower() == "true"
     app.config["FEATURE_BOOKINGS"]  = os.environ.get("FEATURE_BOOKINGS",  "true").lower() == "true"
+    app.config["FEATURE_AVATAR"]    = os.environ.get("FEATURE_AVATAR",    "true").lower() == "true"
 
     # --- Jackie AI / OpenAI ---
     app.config["OPENAI_API_KEY"]    = os.environ.get("OPENAI_API_KEY", "")
@@ -117,6 +118,10 @@ def create_app():
         from blueprints.email import email_bp
         app.register_blueprint(email_bp, url_prefix="/email")
 
+    if app.config["FEATURE_AVATAR"]:
+        from blueprints.avatar import avatar_bp
+        app.register_blueprint(avatar_bp, url_prefix="/avatar")
+
     # --- Context processor ---
     @app.context_processor
     def inject_globals():
@@ -131,6 +136,7 @@ def create_app():
                 "email":     app.config["FEATURE_EMAIL"],
                 "analytics": app.config["FEATURE_ANALYTICS"],
                 "bookings":  app.config["FEATURE_BOOKINGS"],
+                "avatar":    app.config["FEATURE_AVATAR"],
             },
         }
 

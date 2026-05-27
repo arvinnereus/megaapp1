@@ -1,0 +1,234 @@
+{% extends "base_admin.html" %}
+
+{% block page_title %}Avatar Generator{% endblock %}
+{% block page_subtitle %}Upload your photo and an optional reference, then let Kie create a new avatar.{% endblock %}
+
+{% block content %}
+<style>
+    .avatar-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 768px) { .avatar-grid { grid-template-columns: 1fr; } }
+    .upload-box {
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        padding: 18px;
+        text-align: center;
+        background: var(--bg-secondary);
+        position: relative;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .upload-box.has-image { padding: 0; overflow: hidden; }
+    .upload-box img.preview {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    .upload-box .upload-label {
+        font-size: 0.85rem;
+        color: var(--text-subtle);
+        letter-spacing: 0.04em;
+    }
+    .upload-box .upload-hint { font-size: 0.7rem; color: var(--text-subtle); opacity: 0.7; }
+    .upload-box .clear-btn {
+        position: absolute;
+        top: 8px; right: 8px;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        cursor: pointer;
+        z-index: 2;
+    }
+    .avatar-result {
+        margin-top: 24px;
+        padding: 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-align: center;
+    }
+    .avatar-result img {
+        max-width: 100%;
+        max-height: 600px;
+        border-radius: 8px;
+    }
+    .avatar-error {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: rgba(220, 70, 70, 0.1);
+        border: 1px solid rgba(220, 70, 70, 0.4);
+        color: rgba(220, 70, 70, 0.95);
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+</style>
+
+<div x-data="avatarGenerator()" style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-body">
+            <div class="avatar-grid">
+                <!-- Primary upload -->
+                <div>
+                    <div class="upload-box" :class="primaryPreview ? 'has-image' : ''" @click="primaryPreview ? null : $refs.primaryInput.click()">
+                        <template x-if="primaryPreview">
+                            <img class="preview" :src="primaryPreview" alt="Primary">
+                        </template>
+                        <template x-if="primaryPreview">
+                            <button class="clear-btn" @click.stop="clearPrimary()">Remove</button>
+                        </template>
+                        <template x-if="!primaryPreview">
+                            <div>
+                                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <div class="upload-label">Your photo <span style="color: var(--gold);">(required)</span></div>
+                                <div class="upload-hint">Click to upload — JPG or PNG, square works best</div>
+                            </div>
+                        </template>
+                    </div>
+                    <input type="file" x-ref="primaryInput" accept="image/*"
+                           style="display:none" @change="onPrimary($event)">
+                </div>
+
+                <!-- Secondary upload -->
+                <div>
+                    <div class="upload-box" :class="referencePreview ? 'has-image' : ''" @click="referencePreview ? null : $refs.referenceInput.click()">
+                        <template x-if="referencePreview">
+                            <img class="preview" :src="referencePreview" alt="Reference">
+                        </template>
+                        <template x-if="referencePreview">
+                            <button class="clear-btn" @click.stop="clearReference()">Remove</button>
+                        </template>
+                        <template x-if="!referencePreview">
+                            <div>
+                                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                <div class="upload-label">Reference image <span style="color: var(--text-subtle);">(optional)</span></div>
+                                <div class="upload-hint">A style, scene, or outfit reference</div>
+                            </div>
+                        </template>
+                    </div>
+                    <input type="file" x-ref="referenceInput" accept="image/*"
+                           style="display:none" @change="onReference($event)">
+                </div>
+            </div>
+
+            <!-- Prompt -->
+            <label style="font-size: 0.8rem; color: var(--text-subtle); letter-spacing: 0.06em; text-transform: uppercase;">
+                Describe the scene / styling (your face is preserved automatically)
+            </label>
+            <textarea x-model="prompt" rows="3"
+                      placeholder="e.g. Standing in a modern executive office, navy suit and tie, golden-hour window light, warm cinematic mood."
+                      style="width:100%; margin-top:8px; padding:12px; border-radius:8px;
+                             background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary);
+                             font-family: inherit; resize: vertical;"
+                      :disabled="loading"></textarea>
+            <div style="margin-top:6px; font-size:0.7rem; color: var(--text-subtle); opacity:0.7;">
+                The system automatically tells the AI to preserve your facial features exactly and integrate you naturally into the scene (matching lighting, shadows, depth).
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: 16px; width: 100%;"
+                    @click="generate()"
+                    :disabled="loading || !primaryFile || !prompt.trim()">
+                <span x-show="!loading">Generate Avatar</span>
+                <span x-show="loading" x-text="loadingMsg"></span>
+            </button>
+
+            <div class="avatar-error" x-show="error" x-text="error"></div>
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div class="avatar-result" x-show="resultUrl" x-transition>
+        <h3 style="margin: 0 0 12px; color: var(--gold);">Your new avatar</h3>
+        <img :src="resultUrl" alt="Generated avatar">
+        <div style="margin-top: 12px; font-size: 0.8rem; color: var(--text-subtle);">
+            <span x-text="resultMeta"></span>
+            &nbsp;•&nbsp;
+            <a :href="resultUrl" target="_blank" style="color: var(--gold);">Open full size</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function avatarGenerator() {
+    return {
+        primaryFile: null,
+        primaryPreview: null,
+        referenceFile: null,
+        referencePreview: null,
+        prompt: '',
+        loading: false,
+        loadingMsg: 'Generating...',
+        error: '',
+        resultUrl: '',
+        resultMeta: '',
+
+        onPrimary(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            this.primaryFile = f;
+            this.primaryPreview = URL.createObjectURL(f);
+            this.error = '';
+        },
+        clearPrimary() {
+            this.primaryFile = null;
+            this.primaryPreview = null;
+            this.$refs.primaryInput.value = '';
+        },
+        onReference(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            this.referenceFile = f;
+            this.referencePreview = URL.createObjectURL(f);
+        },
+        clearReference() {
+            this.referenceFile = null;
+            this.referencePreview = null;
+            this.$refs.referenceInput.value = '';
+        },
+
+        async generate() {
+            if (!this.primaryFile || !this.prompt.trim()) return;
+            this.loading = true;
+            this.error = '';
+            this.resultUrl = '';
+            this.loadingMsg = 'Uploading your photo to R2…';
+
+            const fd = new FormData();
+            fd.append('primary', this.primaryFile);
+            if (this.referenceFile) fd.append('reference', this.referenceFile);
+            fd.append('prompt', this.prompt);
+
+            // Visual progress messages (no real backpressure, just UX)
+            setTimeout(() => { if (this.loading) this.loadingMsg = 'Kie is rendering your avatar (typically 30–70s)…'; }, 3000);
+            setTimeout(() => { if (this.loading) this.loadingMsg = 'Still cooking — Kie can take up to 90s per image…'; }, 35000);
+
+            try {
+                const r = await fetch('/avatar/api/generate', { method: 'POST', body: fd });
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+                this.resultUrl = data.image_url;
+                this.resultMeta = `via ${data.provider || '?'} • Task ${data.task_id || '?'} • ${data.duration || '?'}s • $${(data.cost || 0).toFixed(4)}`;
+                if (data.fallback_reason) {
+                    this.resultMeta += `  •  (primary failed → ${data.fallback_reason.split('|')[0].trim()})`;
+                }
+            } catch (err) {
+                this.error = (err && err.message) ? err.message : String(err);
+            } finally {
+                this.loading = false;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}
