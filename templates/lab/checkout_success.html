@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're in — Capstone AI Lab</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+  </style>
+</head>
+<body class="bg-slate-50">
+  <div class="brand-gradient text-white py-16">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <div class="text-6xl mb-4">🎉</div>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">You're in.</h1>
+      <p class="text-xl text-indigo-100">Welcome to Capstone AI Lab.</p>
+    </div>
+  </div>
+
+  <div class="max-w-2xl mx-auto px-6 py-12">
+    <div class="bg-white rounded-lg shadow p-8 space-y-6">
+      <div>
+        <h2 class="text-xl font-bold mb-2">What happens next</h2>
+        <p class="text-slate-700">A welcome email is on its way to your inbox right now. It includes:</p>
+        <ul class="list-disc pl-6 mt-3 space-y-1 text-slate-700">
+          <li>Your login link for the program</li>
+          <li>Week 1 instructions (you can start today)</li>
+          <li>The community link (Pro / Mastermind tiers)</li>
+          <li>Receipt + tax invoice from Stripe</li>
+        </ul>
+      </div>
+
+      <div class="border-t pt-6">
+        <h3 class="font-semibold mb-2">Didn't receive the email?</h3>
+        <p class="text-slate-700 text-sm">
+          Check spam first. Still nothing after 10 minutes?
+          Email <a href="mailto:support@capstoneailab.com" class="text-indigo-600 font-semibold">support@capstoneailab.com</a>
+          and include the session ID below.
+        </p>
+        {% if session_id %}
+        <p class="text-xs text-slate-500 mt-3 font-mono break-all">Session: {{ session_id }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <p class="text-center mt-8">
+      <a href="/lab" class="text-indigo-600 font-semibold">← Back to the program page</a>
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capstone AI Lab — Build 12 Real AI Tools In 12 Weeks</title>
+  <meta name="description" content="The only AI program where you don't watch lectures. You build 12 real tools you actually use — at work, at home, every day. Or 100% money back.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Capstone AI Lab — Ship 12 Real AI Tools In 12 Weeks">
+  <meta property="og:description" content="The only AI program where you build instead of watching lectures.">
+  <meta property="og:url" content="https://capstoneailab.com/lab">
+  <meta property="og:type" content="website">
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  {% if config.UMAMI_WEBSITE_ID %}
+  <script async defer src="{{ config.UMAMI_SCRIPT_URL }}" data-website-id="{{ config.UMAMI_WEBSITE_ID }}"></script>
+  {% endif %}
+
+  <style>
+    body { font-family: 'Inter', -apple-system, sans-serif; color: #0f172a; }
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+    .brand-text { color: #4f46e5; }
+    .container-narrow { max-width: 760px; }
+    .container-wide { max-width: 1100px; }
+    .tier-popular { border: 2px solid #4f46e5; position: relative; }
+    .tier-popular::before {
+      content: 'MOST POPULAR';
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      background: #4f46e5; color: white; padding: 4px 16px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+    }
+    .check::before { content: "✓"; color: #10b981; font-weight: 700; margin-right: 8px; }
+    .xmark::before { content: "—"; color: #94a3b8; margin-right: 8px; }
+  </style>
+</head>
+<body class="bg-white">
+
+  <!-- HERO -->
+  <section class="brand-gradient text-white">
+    <div class="container-wide mx-auto px-6 py-16 md:py-24">
+      <div class="max-w-3xl mx-auto text-center">
+        <p class="text-sm uppercase tracking-widest text-indigo-100 mb-4">Capstone AI Lab · Adult Track</p>
+        <h1 class="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
+          Ship 12 Real AI Tools In 12 Weeks.<br>
+          <span class="text-indigo-200">Or 100% Of Your Money Back.</span>
+        </h1>
+        <p class="text-lg md:text-xl text-indigo-100 mb-10 leading-relaxed">
+          The only AI program where you don't watch lectures.
+          You build things you actually use — at work, at home, every day.
+        </p>
+
+        <a href="#pricing" class="inline-block bg-white text-indigo-700 font-bold text-lg px-10 py-4 rounded-lg shadow-lg hover:bg-indigo-50 transition">
+          See the 3 ways to join →
+        </a>
+
+        <p class="text-sm text-indigo-100 mt-8">
+          Built by Arvin Yeo · Agentic AI Practitioner · Lead Trainer, Capstone Group · Singapore
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- THE PROBLEM -->
+  <section class="py-16 md:py-24">
+    <div class="container-narrow mx-auto px-6">
+      <h2 class="text-3xl md:text-4xl font-bold mb-6">Why most people who try to learn AI never build anything</h2>
+      <div class="prose prose-lg text-slate-700 space-y-4">
+        <p>You're probably one of the 78% of professionals who've signed up for an "AI course" in the past 12 months.</p>
+        <p>You watched the first 3 videos. You took some notes. You felt smart for an afternoon.</p>
+        <p>And then... nothing changed in your actual work.</p>
+        <p>That's because every other AI program is built like university — <em>learn now, apply later</em>. But AI isn't a topic. It's a tool.</p>
+        <p class="font-semibold text-slate-900">You don't learn a tool by watching videos. You learn it by using it to make something real.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- THE 12 PROJECTS -->
+  <section class="bg-slate-50 py-16 md:py-24">
+    <div class="container-wide mx-auto px-6">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">The 12 projects you'll ship</h2>
+        <p class="text-slate-600 text-lg">Each one: 60–90 minutes. You keep the tool forever.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {% for week, title, blurb in [
+          (1, "Personal AI Assistant", "A custom-prompted assistant tailored to your job, tone, and daily tasks."),
+          (2, "Daily Email Triage Bot", "Each morning your inbox auto-summarized into must-reply / FYI / archive."),
+          (3, "Meeting Notes AI", "Record → transcript → decisions, action items, draft follow-up email. 90 seconds."),
+          (4, "Chat-With-Your-Docs Bot", "Upload your company docs, ask any question, get cited answers."),
+          (5, "Social Post Writer", "Topic in, 5 ready-to-post drafts out — in your voice, not ChatGPT's."),
+          (6, "Customer FAQ Bot", "An embeddable chatbot for your website. One line of HTML."),
+          (7, "Recipe + Grocery Planner", "Pantry in → meal plan + deduplicated shopping list out."),
+          (8, "Travel Itinerary Builder", "City + days + interests → full day-by-day plan with restaurants + transit."),
+          (9, "Personal Task Agent", "A Telegram bot that organizes your day from your calendar + tasks."),
+          (10, "Daily News Curator", "5 personalized news stories summarized, in your inbox every morning."),
+          (11, "Content Repurposing Engine", "1 podcast → 1 LinkedIn article + 5 tweets + 3 captions + newsletter."),
+          (12, "Your Capstone Project", "Pick a problem in your real life. Design + ship the AI tool that solves it."),
+        ] %}
+        <div class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition">
+          <div class="text-xs uppercase tracking-wider brand-text font-bold mb-2">Week {{ week }}</div>
+          <h3 class="text-lg font-bold mb-2">{{ title }}</h3>
+          <p class="text-sm text-slate-600">{{ blurb }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+
+  <!-- WHO BUILT THIS -->
+  <section class="py-16 md:py-24">
+    <div class="container-narrow mx-auto px-6">
+      <h2 class="text-3xl md:text-4xl font-bold mb-6">Hi, I'm Arvin Yeo.</h2>
+      <div class="prose prose-lg text-slate-700 space-y-4">
+        <p>I'm an <strong>Agentic AI Practitioner</strong> and the <strong>Lead Trainer at Capstone Group</strong> in Singapore. I've trained AI implementation for IBM. I've shipped production agentic systems — not slideware demos, real systems that move real money.</p>
+        <p>That last part matters. <strong>Most AI trainers can teach concepts. Almost none of them ship production AI.</strong> That gap is why I built this course: to teach what I actually do, not what I learned from a textbook.</p>
+      </div>
+      <div class="mt-10 border-l-4 brand-text pl-6 italic text-slate-700">
+        "Arvin doesn't teach you AI like a professor. He teaches it like a builder who happens to be very good at explaining things."
+        <div class="not-italic text-sm text-slate-500 mt-2">— Beta cohort student</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- PRICING -->
+  <section id="pricing" class="bg-slate-50 py-16 md:py-24">
+    <div class="container-wide mx-auto px-6">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Three ways to join</h2>
+        <p class="text-slate-600 text-lg">Pick the tier that fits. Same 60-day money-back guarantee on all.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+
+        <!-- LITE -->
+        <div class="bg-white rounded-lg shadow-sm p-8">
+          <h3 class="text-xl font-bold mb-2">Lite</h3>
+          <p class="text-sm text-slate-500 mb-4">Just the program</p>
+          <div class="text-4xl font-extrabold mb-1">${{ tiers.lite.price_usd }}</div>
+          <div class="text-sm text-slate-500 mb-6">one-time payment</div>
+          <ul class="space-y-2 text-sm text-slate-700 mb-8">
+            <li class="check">All 12 weeks of recorded course</li>
+            <li class="check">12 starter templates</li>
+            <li class="check">60-day money-back guarantee</li>
+            <li class="xmark">No community</li>
+            <li class="xmark">No live calls</li>
+          </ul>
+          <a href="{{ url_for('lab.checkout', tier='lite') }}" class="block text-center bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition">
+            Get Lite — ${{ tiers.lite.price_usd }}
+          </a>
+          <p class="text-xs text-center text-slate-500 mt-4">
+            Add the "100 AI Prompts" library at checkout for +${{ bump.price_usd }}
+          </p>
+        </div>
+
+        <!-- PRO -->
+        <div class="bg-white rounded-lg shadow-xl p-8 tier-popular">
+          <h3 class="text-xl font-bold mb-2">Pro</h3>
+          <p class="text-sm text-slate-500 mb-4">Program + community</p>
+          <div class="text-4xl font-extrabold mb-1">${{ tiers.pro.price_usd }}</div>
+          <div class="text-sm text-slate-500 mb-6">one-time payment</div>
+          <ul class="space-y-2 text-sm text-slate-700 mb-8">
+            <li class="check">Everything in Lite</li>
+            <li class="check">100 Production-Tested AI Prompts library</li>
+            <li class="check">Capstone AI Lab community (Skool)</li>
+            <li class="check">Monthly group Q&A archive</li>
+            <li class="check">Automated AI project review</li>
+          </ul>
+          <a href="{{ url_for('lab.checkout', tier='pro') }}" class="block text-center brand-gradient text-white font-bold py-3 rounded-lg hover:opacity-90 transition">
+            Get Pro — ${{ tiers.pro.price_usd }}
+          </a>
+        </div>
+
+        <!-- MASTERMIND -->
+        <div class="bg-white rounded-lg shadow-sm p-8">
+          <h3 class="text-xl font-bold mb-2">Mastermind</h3>
+          <p class="text-sm text-slate-500 mb-4">Program + Arvin's inbox</p>
+          <div class="text-4xl font-extrabold mb-1">${{ "{:,}".format(tiers.master.price_usd) }}</div>
+          <div class="text-sm text-slate-500 mb-6">one-time payment</div>
+          <ul class="space-y-2 text-sm text-slate-700 mb-8">
+            <li class="check">Everything in Pro</li>
+            <li class="check">4 live group strategy calls / year</li>
+            <li class="check">90 days direct inbox access to Arvin</li>
+            <li class="check">Founder-only Slack channel</li>
+            <li class="check"><strong>50 seats per year only</strong></li>
+          </ul>
+          <a href="{{ url_for('lab.checkout', tier='master') }}" class="block text-center bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition">
+            Get Mastermind — ${{ "{:,}".format(tiers.master.price_usd) }}
+          </a>
+        </div>
+
+      </div>
+
+      <p class="text-center text-sm text-slate-500 mt-10">
+        Got kids 8–14? The <a href="/junior" class="brand-text underline font-semibold">Family Bundle ($797)</a> includes your Pro seat + up to 3 Junior Pro seats.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- GUARANTEE -->
+  <section class="py-16 md:py-24">
+    <div class="container-narrow mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-6">The Ship-It Guarantee</h2>
+      <p class="text-lg text-slate-700 leading-relaxed mb-6">
+        Finish all 12 projects within 12 weeks of joining.<br>
+        If you don't ship them, we refund <strong>100%</strong> — no questions asked, no forms, no friction.
+      </p>
+      <p class="text-slate-600">
+        You take zero risk. We take all of it. That's the deal.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- FAQ -->
+  <section class="bg-slate-50 py-16 md:py-24">
+    <div class="container-narrow mx-auto px-6">
+      <h2 class="text-3xl md:text-4xl font-bold mb-10 text-center">Frequently asked</h2>
+      <div class="space-y-6">
+        {% for q, a in [
+          ("Do I need to know how to code?", "No. Phases 1 and 2 (weeks 1–8) are pure no-code. Phase 3 uses copy-paste templates we provide. If you've ever filled in a form, you can do this."),
+          ("How much time per week?", "60–90 minutes per project. About 15 hours total across 12 weeks. Most beta students finish in 6–8 weeks, self-paced."),
+          ("What's the ongoing cost after week 12?", "Zero. The tools you build run on free or near-free tiers (Claude / ChatGPT free, Zapier free, Replit free). Typical API costs: $0–5/month."),
+          ("Is this for technical or non-technical people?", "Non-technical. Engineers will find Phase 1 too slow. If you've never used ChatGPT before, you're our ideal student."),
+          ("Can my company expense this?", "Yes. Capstone Group can invoice corporate. Email arvin@capstoneailab.com."),
+          ("Do you offer a payment plan?", "Yes — Pro is available at 3× $179. Mastermind at 4× $549. Choose at the cart."),
+        ] %}
+        <details class="bg-white rounded-lg p-6 shadow-sm">
+          <summary class="font-semibold cursor-pointer">{{ q }}</summary>
+          <p class="mt-3 text-slate-700">{{ a }}</p>
+        </details>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+
+  <!-- FINAL CTA -->
+  <section class="brand-gradient text-white py-16 md:py-24">
+    <div class="container-narrow mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl font-extrabold mb-6">
+        Stop thinking. Start shipping.
+      </h2>
+      <p class="text-lg text-indigo-100 mb-10 leading-relaxed">
+        Pick a tier. Block 75 minutes this Sunday. Build Week 1.<br>
+        By 12 Sundays from now you'll have 12 working AI tools and a Capstone you designed yourself.
+      </p>
+      <div class="flex flex-col md:flex-row gap-4 justify-center">
+        <a href="{{ url_for('lab.checkout', tier='lite') }}" class="bg-white text-indigo-700 font-bold px-8 py-3 rounded-lg hover:bg-indigo-50 transition">Get Lite — ${{ tiers.lite.price_usd }}</a>
+        <a href="{{ url_for('lab.checkout', tier='pro') }}" class="bg-indigo-900 text-white font-bold px-8 py-3 rounded-lg ring-2 ring-white hover:bg-indigo-800 transition">Get Pro — ${{ tiers.pro.price_usd }} ★</a>
+        <a href="{{ url_for('lab.checkout', tier='master') }}" class="bg-white text-indigo-700 font-bold px-8 py-3 rounded-lg hover:bg-indigo-50 transition">Get Mastermind — ${{ "{:,}".format(tiers.master.price_usd) }}</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 py-10">
+    <div class="container-wide mx-auto px-6 text-center text-sm">
+      <p class="mb-2">Capstone AI Lab is a product of Capstone Consulting Group Pte Ltd · Singapore</p>
+      <p>
+        <a href="#" class="hover:text-white">Privacy</a> ·
+        <a href="#" class="hover:text-white">Terms</a> ·
+        <a href="#" class="hover:text-white">Refund Policy</a> ·
+        <a href="mailto:arvin@capstoneailab.com" class="hover:text-white">arvin@capstoneailab.com</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>

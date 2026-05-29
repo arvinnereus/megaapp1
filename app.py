@@ -62,6 +62,7 @@ def create_app():
     # --- Stripe ---
     app.config["STRIPE_SECRET_KEY"]      = os.environ.get("STRIPE_SECRET_KEY", "")
     app.config["STRIPE_PUBLISHABLE_KEY"] = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+    app.config["STRIPE_WEBHOOK_SECRET"]  = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
     # --- Resend (email) ---
     app.config["RESEND_API_KEY"]    = os.environ.get("RESEND_API_KEY", "")
@@ -121,6 +122,13 @@ def create_app():
     if app.config["FEATURE_AVATAR"]:
         from blueprints.avatar import avatar_bp
         app.register_blueprint(avatar_bp, url_prefix="/avatar")
+
+    # --- Capstone AI Lab (always on) ---
+    from blueprints.lab import lab_bp
+    app.register_blueprint(lab_bp, url_prefix="/lab")
+
+    from blueprints.stripe_webhook import stripe_webhook_bp
+    app.register_blueprint(stripe_webhook_bp, url_prefix="/webhook")
 
     # --- Context processor ---
     @app.context_processor
