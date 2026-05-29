@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if ok %}You're reserved — Capstone AI Lab{% else %}Hmm — Capstone AI Lab{% endif %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+  </style>
+</head>
+<body class="bg-slate-50">
+
+  {% if ok %}
+  <div class="brand-gradient text-white py-16">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <div class="text-6xl mb-4">✓</div>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4">You're reserved.</h1>
+      <p class="text-xl text-indigo-100">
+        {% if name %}Thanks, {{ name }}.{% endif %}
+        Your {{ tier|title }} seat is held for you.
+      </p>
+    </div>
+  </div>
+
+  <div class="max-w-2xl mx-auto px-6 py-12">
+    <div class="bg-white rounded-lg shadow p-8 space-y-6">
+      <div>
+        <h2 class="text-xl font-bold mb-3">What happens next</h2>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700">
+          <li>You'll get a confirmation email in the next 5 minutes</li>
+          <li>Arvin will personally send your enrolment link within <strong>24–48 hours</strong></li>
+          <li>Founding-member pricing is locked at today's rate</li>
+        </ul>
+      </div>
+
+      <div class="border-t pt-6">
+        <h3 class="font-semibold mb-2">Didn't receive the email?</h3>
+        <p class="text-slate-700 text-sm">
+          Check spam first. Still nothing in 10 minutes?
+          Email <a href="mailto:arvin@capstoneailab.com" class="text-indigo-600 font-semibold">arvin@capstoneailab.com</a> directly.
+        </p>
+      </div>
+    </div>
+
+    <p class="text-center mt-8">
+      <a href="/lab" class="text-indigo-600 font-semibold">← Back to the program page</a>
+    </p>
+  </div>
+
+  {% else %}
+  <div class="max-w-xl mx-auto px-6 py-20 text-center">
+    <h1 class="text-3xl font-extrabold mb-4">Hmm — that didn't go through.</h1>
+    <p class="text-slate-700 text-lg mb-8">{{ message or "Something went wrong on our side." }}</p>
+    <a href="/lab" class="inline-block bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+      ← Back to the program
+    </a>
+    <p class="text-sm text-slate-500 mt-6">
+      Or email <a href="mailto:arvin@capstoneailab.com" class="text-indigo-600 font-semibold">arvin@capstoneailab.com</a> and Arvin will sort it out personally.
+    </p>
+  </div>
+  {% endif %}
+
+</body>
+</html>

@@ -2,23 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Checkout coming soon — Capstone AI Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reserve your seat — {{ tier.name }}</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Inter', sans-serif; }</style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; color: #0f172a; }
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+    .brand-text { color: #4f46e5; }
+  </style>
 </head>
-<body class="bg-white">
-  <div class="max-w-xl mx-auto px-6 py-20 text-center">
-    <h1 class="text-3xl font-extrabold mb-4">{{ tier.name }}</h1>
-    <p class="text-3xl font-bold text-indigo-600 mb-6">${{ tier.price_usd }}</p>
-    <p class="text-slate-700 mb-8">
-      Online checkout opens shortly. To enrol now, email
-      <a href="mailto:arvin@capstoneailab.com" class="text-indigo-600 font-semibold">arvin@capstoneailab.com</a>
-      and Arvin will send you an invoice link directly.
-    </p>
-    <a href="/lab" class="inline-block bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
-      ← Back to the program
-    </a>
+<body class="bg-slate-50">
+
+  <div class="brand-gradient text-white py-12">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <p class="text-sm uppercase tracking-widest text-indigo-200 mb-3">Founding-member access</p>
+      <h1 class="text-3xl md:text-4xl font-extrabold mb-3">Reserve Your Seat</h1>
+      <p class="text-xl text-indigo-100">{{ tier.name }} · ${{ "{:,}".format(tier.price_usd) }}</p>
+    </div>
   </div>
+
+  <div class="max-w-2xl mx-auto px-6 py-12">
+    <div class="bg-white rounded-lg shadow-md p-8">
+      <p class="text-slate-700 mb-6 leading-relaxed">
+        Public checkout opens in the next few days. <strong>Reserve your seat now</strong> and Arvin will personally send you the enrolment link within 24–48 hours — before anyone else.
+      </p>
+
+      <form action="{{ url_for('lab.reserve') }}" method="POST" class="space-y-4">
+        <input type="hidden" name="tier" value="{{ tier_slug }}">
+
+        <div>
+          <label for="name" class="block text-sm font-semibold text-slate-700 mb-1">Your name</label>
+          <input type="text" id="name" name="name" required
+            class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            placeholder="e.g. Arvin Yeo">
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-semibold text-slate-700 mb-1">Email address</label>
+          <input type="email" id="email" name="email" required
+            class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+            placeholder="you@yourcompany.com">
+        </div>
+
+        <button type="submit"
+          class="w-full brand-gradient text-white font-bold py-4 rounded-lg hover:opacity-90 transition text-lg">
+          Reserve my {{ tier.name.split('—')[-1].strip() }} seat →
+        </button>
+
+        <p class="text-xs text-center text-slate-500 mt-3">
+          You will NOT be charged today. We'll email you a personal enrolment link.
+        </p>
+      </form>
+    </div>
+
+    <div class="mt-8 text-center">
+      <p class="text-sm text-slate-600 mb-2">Prefer to message directly?</p>
+      <p class="text-sm">
+        <a href="mailto:arvin@capstoneailab.com?subject=Reserve my {{ tier.name }} seat"
+           class="brand-text font-semibold">arvin@capstoneailab.com</a>
+      </p>
+    </div>
+
+    <p class="text-center mt-10">
+      <a href="/lab" class="text-slate-500 hover:text-indigo-600 text-sm">← Back to the program details</a>
+    </p>
+  </div>
+
 </body>
 </html>

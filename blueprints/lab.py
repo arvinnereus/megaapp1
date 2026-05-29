@@ -8,6 +8,7 @@ product store in blueprints/products.py).
 Routes:
     GET  /lab                  → long-form VSL sales page
     POST /lab/checkout/<tier>  → create Stripe Checkout session, redirect to Stripe
+    POST /lab/reserve          → "reserve your seat" form (when checkout isn't live yet)
     GET  /lab/success          → thank-you page (parsed from Stripe session_id query param)
     GET  /lab/cancel           → cancel page
 
@@ -20,6 +21,15 @@ Tiers (USD):
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, current_app, abort
 
 lab_bp = Blueprint("lab", __name__)
+
+
+def _is_valid_stripe_key(key: str) -> bool:
+    """Sanity-check key format BEFORE handing it to Stripe.
+
+    Catches the common 'wrong env var pasted' mistake — e.g. someone
+    accidentally pastes the Flask SECRET_KEY into STRIPE_SECRET_KEY.
+    """
+    return bool(key) and (key.startswith("sk_test_") or key.startswith("sk_live_"))
 
 
 TIERS = {
@@ -77,12 +87,16 @@ def checkout(tier):
     # Optional order bump (only offered on Lite checkout — see template)
     add_bump = request.values.get("bump", "").lower() in ("1", "true", "yes", "on")
 
-    if not stripe_key:
-        # No live Stripe key configured — go to a graceful fallback so launch
-        # doesn't blow up when the env var isn't set yet (e.g. first deploy).
+    # Validate key format BEFORE calling Stripe — catches the common
+    # "wrong env var pasted" mistake and the "key not set yet" case in one step.
+    if not _is_valid_stripe_key(stripe_key):
+        current_app.logger.warning(
+            "Stripe key missing or malformed for tier=%s — showing reservation page", tier
+        )
         return render_template(
             "lab/checkout_pending.html",
             tier=spec,
+            tier_slug=tier,
             bump=ORDER_BUMP if add_bump else None,
         ), 200
 
@@ -126,9 +140,144 @@ def checkout(tier):
             return jsonify({"checkout_url": session_obj.url, "session_id": session_obj.id})
         return redirect(session_obj.url, code=303)
 
-    except Exception as e:
+    except stripe.error.AuthenticationError:
+        # Key was the right format but Stripe rejected it (revoked, wrong env, typo).
+        # Gracefully fall back to reservation page instead of a JSON error.
+        current_app.logger.warning("Stripe authentication failed — falling back to reservation page")
+        return render_template(
+            "lab/checkout_pending.html",
+            tier=spec,
+            tier_slug=tier,
+            bump=ORDER_BUMP if add_bump else None,
+        ), 200
+    except Exception:
+        # Catch-all: render the same reservation page so the buyer NEVER sees
+        # a raw JSON error. Logs capture the real exception for debugging.
         current_app.logger.exception("Stripe checkout failed for tier=%s", tier)
-        return jsonify({"error": f"Checkout error: {e}"}), 500
+        return render_template(
+            "lab/checkout_pending.html",
+            tier=spec,
+            tier_slug=tier,
+            bump=ORDER_BUMP if add_bump else None,
+        ), 200
+
+
+# --- RESERVATION (collects interest while real checkout isn't live) ---
+
+@lab_bp.route("/reserve", methods=["POST"], strict_slashes=False)
+def reserve():
+    """Capture interest when checkout isn't fully wired yet.
+
+    Records the contact in DB + notifies Arvin via Resend + confirms to buyer.
+    Resend failures are logged but never block the user-facing flow.
+    """
+    from extensions import db
+    from models import Contact, log_activity
+
+    name = (request.form.get("name") or "").strip()
+    email = (request.form.get("email") or "").strip()
+    tier = (request.form.get("tier") or "unknown").strip()
+
+    if not email or "@" not in email:
+        return render_template(
+            "lab/reserved.html",
+            ok=False,
+            message="That email doesn't look right — give it another try?",
+            tier=tier,
+        ), 400
+
+    # Find or create contact (idempotent — re-submits update the existing record)
+    contact = Contact.query.filter_by(email=email).first()
+    if not contact:
+        contact = Contact(
+            name=name or email.split("@")[0],
+            email=email,
+            status="Reservation",
+            lead_source=f"AI Apps Lab — reserved {tier}",
+        )
+        db.session.add(contact)
+        db.session.flush()
+        log_activity(
+            "contact_created",
+            f"AI Apps Lab reservation: {contact.name} ({tier})",
+            contact_id=contact.id,
+        )
+    else:
+        # Existing contact reserving — bump notes
+        log_activity(
+            "reservation_repeat",
+            f"Repeat reservation from {contact.name} ({tier})",
+            contact_id=contact.id,
+        )
+
+    db.session.commit()
+
+    # Resend emails (best-effort — never block the flow on failure)
+    _send_reservation_emails(name or contact.name, email, tier)
+
+    return render_template("lab/reserved.html", ok=True, tier=tier, name=name or contact.name)
+
+
+def _send_reservation_emails(name: str, email: str, tier: str) -> None:
+    """Send buyer confirmation + Arvin notification via Resend. Best-effort."""
+    import requests
+    resend_key = current_app.config.get("RESEND_API_KEY", "")
+    from_email = current_app.config.get("RESEND_FROM_EMAIL", "") or "arvin@capstoneailab.com"
+
+    if not resend_key:
+        current_app.logger.info("Resend not configured — skipping reservation emails")
+        return
+
+    headers = {"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"}
+
+    # Buyer confirmation
+    buyer_html = f"""
+    <p>Hi {name},</p>
+    <p>Thanks for reserving your seat in <strong>Capstone AI Lab — {tier.title()}</strong>.</p>
+    <p>Quick context: I'm finalising the live checkout this week. You'll be the first
+    to get the link — usually within 24-48 hours of reserving.</p>
+    <p>If you have a specific question about the program, just hit reply. I read everything.</p>
+    <p>Warmly,<br>Arvin Yeo<br>Capstone AI Lab</p>
+    """
+    try:
+        requests.post(
+            "https://api.resend.com/emails",
+            headers=headers,
+            json={
+                "from": from_email,
+                "to": [email],
+                "subject": f"You're reserved — Capstone AI Lab {tier.title()}",
+                "html": buyer_html,
+            },
+            timeout=10,
+        )
+    except Exception:
+        current_app.logger.warning("Buyer confirmation email failed for %s", email)
+
+    # Arvin notification
+    arvin_html = f"""
+    <p>New AI Apps Lab reservation:</p>
+    <ul>
+      <li><strong>Name:</strong> {name}</li>
+      <li><strong>Email:</strong> {email}</li>
+      <li><strong>Tier:</strong> {tier}</li>
+    </ul>
+    <p>Reach out within 48 hours with a personal link.</p>
+    """
+    try:
+        requests.post(
+            "https://api.resend.com/emails",
+            headers=headers,
+            json={
+                "from": from_email,
+                "to": ["arvin@capstoneailab.com"],
+                "subject": f"New Lab reservation: {name} ({tier})",
+                "html": arvin_html,
+            },
+            timeout=10,
+        )
+    except Exception:
+        current_app.logger.warning("Arvin notification email failed")
 
 
 # --- SUCCESS / CANCEL ---
