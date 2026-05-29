@@ -48,7 +48,7 @@ ORDER_BUMP = {
 
 # --- SALES PAGE ---
 
-@lab_bp.route("/", methods=["GET"])
+@lab_bp.route("/", methods=["GET"], strict_slashes=False)
 def sales_page():
     """Long-form VSL — the public sales page for Adult tier."""
     return render_template(
@@ -60,7 +60,7 @@ def sales_page():
 
 # --- CHECKOUT ---
 
-@lab_bp.route("/checkout/<tier>", methods=["POST", "GET"])
+@lab_bp.route("/checkout/<tier>", methods=["POST", "GET"], strict_slashes=False)
 def checkout(tier):
     """Create a Stripe Checkout Session for the chosen tier.
 
@@ -133,7 +133,7 @@ def checkout(tier):
 
 # --- SUCCESS / CANCEL ---
 
-@lab_bp.route("/success", methods=["GET"])
+@lab_bp.route("/success", methods=["GET"], strict_slashes=False)
 def success():
     """Stripe redirects here after successful payment.
 
@@ -145,6 +145,6 @@ def success():
     return render_template("lab/checkout_success.html", session_id=session_id)
 
 
-@lab_bp.route("/cancel", methods=["GET"])
+@lab_bp.route("/cancel", methods=["GET"], strict_slashes=False)
 def cancel():
     return render_template("lab/checkout_cancel.html")
